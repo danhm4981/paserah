@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!empty($email) && !empty($password)) {
         
-        $stmt = $pdo->prepare("SELECT id, username, password FROM users WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT user_id, username, password FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
