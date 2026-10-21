@@ -72,7 +72,8 @@ footer{text-align:center;padding:20px;background:var(--primary-dark);color:var(-
 <ul class="nav-links">
 <li><a href="index.php?lang=<?= $lang ?>"><?= $en?'Home':'الرئيسية' ?></a></li>
 <li><a href="about.php?lang=<?= $lang ?>"><?= $en?'About':'عن بصيرة' ?></a></li>
-<li><a href="#features"><?= $en?'Features':'المميزات' ?></a></li>
+<li><a href="index.php#features"><?= $en?'Features':'المميزات' ?></a></li>               
+
 <li><a href="contact.php?lang=<?= $lang ?>"><?= $en?'Contact':'تواصل معنا' ?></a></li>
 </ul>
 <div class="buttons">
