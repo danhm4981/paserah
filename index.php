@@ -9,6 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     
     <style>
+               html {
+    scroll-behavior: smooth;
+}
         :root {
             --primary-color: #008080; /* اللون الأساسي */
             --primary-dark: #005a5a;
