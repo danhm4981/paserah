@@ -4,7 +4,6 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once __DIR__ . '/db.php';
 
-// معرف المريض (من الجلسة أو رقم افتراضي للتجربة)
 $patient_id = $_SESSION['user_id'] ?? 1; 
 $today = date('Y-m-d');
 
@@ -423,7 +422,7 @@ if (isset($pdo)) {
     </div>
 
     <footer>
-        <p>©️ <?php echo date("Y"); ?> بصيرة - جميع الحقوق محفوظة</p>
+        <p>© <?php echo date("Y"); ?> بصيرة - جميع الحقوق محفوظة</p>
     </footer>
 
 </body>
