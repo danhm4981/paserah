@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <?php
 require_once __DIR__.'/db.php';
 $lang=$_GET['lang']??'ar';$lang=in_array($lang,['ar','en'],true)?$lang:'ar';$en=$lang==='en';
