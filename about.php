@@ -15,6 +15,9 @@ require_once __DIR__. '/db.php';
     --text-muted:#6c7a7d; --white:#ffffff;
 }
 * { box-sizing:border-box; margin:0; padding:0; font-family:'Tajawal',sans-serif; }
+body{
+    background-color: #f4fbfb
+}
 /* Header */
 header { background:var(--white); padding:15px 5%; box-shadow:0 2px 10px rgba(0,0,0,.03); }
 nav { display:flex; justify-content:space-between; align-items:center; max-width:1200px; margin:auto; }
@@ -29,7 +32,7 @@ nav { display:flex; justify-content:space-between; align-items:center; max-width
 .btn:hover { opacity:.9; transform:translateY(-1px); }
 /* Page Content */
 main { max-width:1200px; margin:auto; padding:40px 5%; }
-.about-hero { background:var(--bg-light); padding:50px 35px; text-align:center; border-radius:15px; margin-bottom:35px; }
+.about-hero { background:var(--white); padding:50px 35px; text-align:center; border-radius:15px; margin-bottom:35px; }
 .about-hero h1 { color:var(--primary-color); font-size:36px; margin-bottom:15px; }
 .about-hero p,.section-description { color:var(--text-muted); line-height:1.9; }
 .about-hero p { font-size:18px; max-width:750px; margin:auto; }
@@ -51,7 +54,7 @@ main { max-width:1200px; margin:auto; padding:40px 5%; }
 .goal-card h3 { font-size:18px; margin:12px 0 8px; }
 .audience-grid,.features-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:15px; }
 .audience-item { background:var(--white); padding:18px 20px; border:1px solid var(--bg-light); border-radius:10px; color:var(--text-color); line-height:1.8; }
-.feature-card { background:var(--bg-light); padding:25px; border-radius:12px; }
+.feature-card { background:var(--white); padding:25px; border-radius:12px; }
 /* Footer */
 footer { background:var(--primary-color); color:var(--white); text-align:center; padding:18px; font-size:14px; margin-top:60px; }
 
@@ -76,7 +79,9 @@ footer { background:var(--primary-color); color:var(--white); text-align:center;
 <body>
 <header>
 <nav>
-    <div class="logo"><img src="logo.png" alt="شعار بصيرة" style="height:45px;width:auto;object-fit:contain;"></div>
+    <div class="logo"><img src="logo.png" alt="شعار بصيرة" style="height:45px;width:auto;object-fit:contain;">
+<span>بصيرة</span>
+</div>
     <ul class="nav-links">
         <li><a href="index.php">الرئيسية</a></li>
         <li><a href="about.php">عن بصيرة</a></li>
