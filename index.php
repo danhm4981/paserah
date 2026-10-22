@@ -259,7 +259,7 @@
             <ul class="nav-links">
                 <li><a href="index.php">الرئيسية</a></li>
                 <li><a href="about.php">عن بصيرة</a></li>
-                <li><a href="#features">المميزات</a></li> 
+                <li><a href="index.php#features">المميزات</a></li>
                 <li><a href="contact.php">تواصل معنا</a></li>
             </ul>
             <div class="buttons">
