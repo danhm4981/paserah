@@ -4,6 +4,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 require_once __DIR__ . '/db.php';
 
+include __DIR__ . '/includes/header.php';
+
 $patient_id = $_SESSION['user_id'] ?? 1; 
 $today = date('Y-m-d');
 
@@ -52,6 +54,7 @@ if (isset($pdo)) {
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -63,22 +66,6 @@ if (isset($pdo)) {
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     
     <style>
-        :root {
-            --primary-color: #008080;
-            --primary-dark: #005a5a;
-            --bg-light: #f8fcfc;
-            --text-color: #2b3e42;
-            --text-muted: #6c7a7d;
-            --white: #ffffff;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Tajawal', sans-serif;
-        }
-
         body {
             background-color: var(--bg-light);
             color: var(--text-color);
@@ -93,147 +80,14 @@ if (isset($pdo)) {
             top: 0;
             z-index: 1000;
         }
-
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--primary-color);
-        }
-
-        .nav-links {
-            display: flex;
-            list-style: none;
-            gap: 25px;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-color);
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary-color);
-        }
-
-        .btn {
-            padding: 8px 22px;
-            border-radius: 20px;
-            font-weight: 600;
-            text-decoration: none;
-            font-size: 14px;
-            transition: all 0.3s;
-            cursor: pointer;
-            display: inline-block;
-        }
-
-        .btn-outline {
-            border: 1.5px solid var(--primary-color);
-            color: var(--primary-color);
-            background: transparent;
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: var(--white);
-            border: 1.5px solid var(--primary-color);
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-
         .dashboard-layout {
-            display: flex;
-            min-height: calc(100vh - 140px);
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+    display: flex;
+    min-height: calc(100vh - 140px);
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
 
-        /*  القائمة الجانبية */
-        .sidebar {
-            width: 260px;
-            background-color: var(--white);
-            padding: 30px 20px;
-            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.03);
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            flex-shrink: 0;
-        }
-
-        .sidebar-header h2 {
-            color: var(--text-color);
-            font-size: 20px;
-            margin-bottom: 30px;
-            padding-right: 15px;
-            font-weight: bold;
-        }
-
-        .sidebar-menu {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .sidebar-menu li {
-            margin-bottom: 10px;
-        }
-
-        .sidebar-menu li a {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 14px 18px;
-            color: #557075;
-            text-decoration: none;
-            border-radius: 12px;
-            font-size: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .sidebar-menu li.active a {
-            background-color: #e6f4f4;
-            color: var(--primary-color);
-            font-weight: bold;
-        }
-
-        .sidebar-menu li a:hover {
-            background-color: #f4f9f9;
-            color: var(--primary-color);
-        }
-
-        .sidebar-menu li.logout {
-            margin-top: 40px;
-            border-top: 1px solid #eee;
-            padding-top: 20px;
-        }
-
-        .sidebar-menu li.logout a {
-            color: #d9534f;
-        }
-
-        .sidebar-menu li.logout a:hover {
-            background-color: #fdf2f2;
-        }
-
-        .main-content {
-            flex-grow: 1;
-            padding: 40px;
-        }
 
         .stats-grid {
             display: grid;
@@ -315,55 +169,13 @@ if (isset($pdo)) {
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
             grid-column: 1 / -1;
         }
-
-        footer {
-            background-color: var(--primary-color);
-            color: var(--white);
-            text-align: center;
-            padding: 18px;
-            font-size: 14px;
-        }
+      
     </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <div class="logo">
-                <img src="logo.png" alt="شعار بصيرة" style="height: 45px; width: auto; object-fit: contain;">
-                <span>بصيرة</span>
-            </div>
-            <ul class="nav-links">
-                <li><a href="index.php">الرئيسية</a></li>
-                <li><a href="about.php">عن بصيرة</a></li>
-                <li><a href="index.php#features">المميزات</a></li>
-                <li><a href="contact.php">تواصل معنا</a></li>
-            </ul>
-            <div class="buttons">
-                <a href="register.php" class="btn btn-outline">إنشاء حساب</a>
-                <a href="login.php" class="btn btn-primary">تسجيل الدخول</a>
-            </div>
-        </nav>
-    </header>
-
-    <!-- لوحة التحكم -->
+  <!-- لوحة التحكم -->
     <div class="dashboard-layout">
-        <!-- القائمة الجانبية -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>لوحة المريض</h2>
-            </div>
-            <ul class="sidebar-menu">
-                <li class="active"><a href="#"><span class="icon">🏠</span> الرئيسية</a></li>
-                <li><a href="medications.php"><span class="icon">💊</span> أدويتي</a></li>
-                <li><a href="add-medication.php"><span class="icon">➕</span> إضافة دواء</a></li>
-                <li><a href="notifications.php"><span class="icon">🔔</span> التنبيهات</a></li>
-                <li><a href="dependents.php"><span class="icon">👥</span> التابع</a></li>
-                <li><a href="subscription.php"><span class="icon">⭐</span> الاشتراك</a></li>
-                <li><a href="profile.php"><span class="icon">⚙️</span> الملف الشخصي</a></li>
-                <li class="logout"><a href="logout.php"><span class="icon">🚪</span> تسجيل الخروج</a></li>
-            </ul>
-        </aside>
-
+            <?php include __DIR__ . '/includes/sidebar.php';?>
         <!-- الترحيب-->
         <main class="main-content">
             
@@ -420,10 +232,7 @@ if (isset($pdo)) {
 
         </main>
     </div>
-
-    <footer>
-        <p>© <?php echo date("Y"); ?> بصيرة - جميع الحقوق محفوظة</p>
-    </footer>
+    <?php include __DIR__ . '/includes/footer.php';?>
 
 </body>
 </html>

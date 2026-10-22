@@ -2,6 +2,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/db.php';
+include __DIR__ . '/includes/header.php';
 
 // عرض إشعارات المستخدم المسجل دخوله فقط
 // if (!isset($_SESSION['user_id'])) {
@@ -82,18 +83,6 @@ function h($value) {
     <title>التنبيهات | بصيرة</title>
 
     <style>
-        :root {
-            --primary-color: #008783;
-            --white: #ffffff;
-            --text-color: #34474b;
-            --page-bg: #f3fafa;
-            --border-color: #dce9e8;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
         body {
             margin: 0;
             font-family: Arial, Tahoma, sans-serif;
@@ -102,46 +91,6 @@ function h($value) {
             line-height: 1.8;
         }
 
-        header {
-            background: var(--white);
-            padding: 15px 5%;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, .03);
-        }
-
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-            max-width: 1200px;
-            margin: auto;
-        }
-
-        .logo {
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--primary-color);
-        }
-
-        .nav-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 25px;
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-color);
-            font-weight: 500;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary-color);
-        }
 
         main {
             max-width: 1000px;
@@ -250,18 +199,6 @@ function h($value) {
             margin-bottom: 18px;
         }
 
-        footer {
-            background: var(--primary-color);
-            color: var(--white);
-            text-align: center;
-            padding: 18px;
-            font-size: 14px;
-            margin-top: 60px;
-        }
-
-        footer p {
-            margin: 0;
-        }
 
         @media (max-width: 600px) {
             nav {
@@ -280,24 +217,6 @@ function h($value) {
 </head>
 
 <body>
-    <header>
-        <nav>
-            <div class="logo">
-                <img src="logo.png" alt="شعار بصيرة" style="height: 45px; width: auto; object-fit: contain;">
-                <span>بصيرة</span>
-            </div>
-            <ul class="nav-links">
-                <li><a href="index.php">الرئيسية</a></li>
-                <li><a href="about.php">عن بصيرة</a></li>
-                <li><a href="index.php#features">المميزات</a></li>
-                <li><a href="contact.php">تواصل معنا</a></li>
-            </ul>
-            <div class="buttons">
-                <a href="register.php" class="btn btn-outline">إنشاء حساب</a>
-                <a href="login.php" class="btn btn-primary">تسجيل الدخول</a>
-            </div>
-        </nav>
-    </header>
 
 <main>
     <div class="page-heading">
@@ -385,8 +304,7 @@ function h($value) {
     <?php endif; ?>
 </main>
 
-<footer>
-        <p>© <?php echo date("Y"); ?> بصيرة - جميع الحقوق محفوظة</p>
-</footer>
+<?php include __DIR__ . '/includes/footer.php';?>
+
 </body>
 </html>

@@ -1,5 +1,6 @@
 <?php 
 require_once __DIR__. '/db.php';
+include __DIR__ . '/includes/header.php';
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -9,27 +10,16 @@ require_once __DIR__. '/db.php';
 <title>عن بصيرة | Basirah</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root {
-    --primary-color:#008080; --primary-dark:#005a5a;
-    --bg-light:#f4fbfb; --text-color:#2b3e42;
-    --text-muted:#6c7a7d; --white:#ffffff;
-}
-* { box-sizing:border-box; margin:0; padding:0; font-family:'Tajawal',sans-serif; }
 body{
     background-color: #f4fbfb
 }
-/* Header */
-header { background:var(--white); padding:15px 5%; box-shadow:0 2px 10px rgba(0,0,0,.03); }
-nav { display:flex; justify-content:space-between; align-items:center; max-width:1200px; margin:auto; }
-.logo { display:flex; align-items:center; gap:10px; font-size:24px; font-weight:800; color:var(--primary-color); }
-.nav-links { display:flex; list-style:none; gap:25px; }
-.nav-links a { text-decoration:none; color:var(--text-color); font-weight:500; transition:color .3s; }
-.nav-links a:hover { color:var(--primary-color); }
-.buttons { display:flex; gap:12px; }
-.btn { padding:8px 22px; border-radius:20px; font-weight:600; text-decoration:none; font-size:14px; transition:all .3s; cursor:pointer; display:inline-block; }
-.btn-outline { border:1.5px solid var(--primary-color); color:var(--primary-color); background:transparent; }
-.btn-primary { background:var(--primary-color); color:var(--white); border:1.5px solid var(--primary-color); }
-.btn:hover { opacity:.9; transform:translateY(-1px); }
+.dashboard-layout {
+    display: flex;
+    min-height: calc(100vh - 140px); 
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
 /* Page Content */
 main { max-width:1200px; margin:auto; padding:40px 5%; }
 .about-hero { background:var(--white); padding:50px 35px; text-align:center; border-radius:15px; margin-bottom:35px; }
@@ -77,23 +67,8 @@ footer { background:var(--primary-color); color:var(--white); text-align:center;
 </style>
 </head>
 <body>
-<header>
-<nav>
-    <div class="logo"><img src="logo.png" alt="شعار بصيرة" style="height:45px;width:auto;object-fit:contain;">
-<span>بصيرة</span>
-</div>
-    <ul class="nav-links">
-        <li><a href="index.php">الرئيسية</a></li>
-        <li><a href="about.php">عن بصيرة</a></li>
-        <li><a href="#features">المميزات</a></li>
-        <li><a href="contact.php">تواصل معنا</a></li>
-    </ul>
-    <div class="buttons">
-        <a href="register.php" class="btn btn-outline">إنشاء حساب</a>
-        <a href="login.php" class="btn btn-primary">تسجيل الدخول</a>
-    </div>
-</nav>
-</header>
+    <div class="dashboard-layout">
+<?php include __DIR__ . '/includes/sidebar.php';?>
 <main>
 <section class="about-hero">
     <h1>عن بصيرة</h1>
@@ -155,13 +130,7 @@ footer { background:var(--primary-color); color:var(--white); text-align:center;
         <div class="feature-card"><h3>متابعة الأدوية</h3><p>إتاحة متابعة أدوية المريض وجرعاته من خلال التابع.</p></div>
     </div>
 </section>
-</main>
-<footer>
-<<<<<<< HEAD
-        <p>© <?php echo date("Y"); ?> بصيرة - جميع الحقوق محفوظة</p>
-=======
-    <p>©️ <?php echo date("Y"); ?> بصيرة - جميع الحقوق محفوظة</p>
->>>>>>> 4b0c9594aa9b30011ad8cf39a00d8ef1f0086cec
-</footer>
+</main></div>
+<?php include __DIR__ . '/includes/footer.php';?>
 </body>
 </html>
