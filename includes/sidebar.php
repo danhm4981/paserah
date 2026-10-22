@@ -3,22 +3,8 @@
 <!DOCTYPE html>
 <head>
     <style>
-        :root {
-            --primary-color: #008080;
-            --primary-dark: #005a5a;
-            --bg-light: #f8fcfc;
-            --text-color: #2b3e42;
-            --text-muted: #6c7a7d;
-            --white: #ffffff;
-        }
+     
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Tajawal', sans-serif;
-        }
-        
          .sidebar {
             width: 260px;
             background-color: var(--white);
