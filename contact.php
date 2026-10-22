@@ -91,6 +91,10 @@ padding: 22px;
 </style>
 </head>
 <body>
+     <div class="logo">
+            <img src="logo.png" alt="شعار بصيرة">
+            <span>بصيرة</span>
+        </div>
 <main class="container">
 <h1>تواصل معنا</h1>
  <?php if ($success != "") { ?>
