@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/db.php';
 include __DIR__ . '/includes/header.php';
-$success = "";
+$success = "contact";
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 $name = htmlspecialchars($_POST["name"] ?? "", ENT_QUOTES, 'UTF-8');
 $success = "تم إرسال رسالتك بنجاح يا " . $name;
