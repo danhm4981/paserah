@@ -157,7 +157,11 @@ footer { background:var(--primary-color); color:var(--white); text-align:center;
 </section>
 </main>
 <footer>
+<<<<<<< HEAD
         <p>© <?php echo date("Y"); ?> بصيرة - جميع الحقوق محفوظة</p>
+=======
+    <p>©️ <?php echo date("Y"); ?> بصيرة - جميع الحقوق محفوظة</p>
+>>>>>>> 4b0c9594aa9b30011ad8cf39a00d8ef1f0086cec
 </footer>
 </body>
 </html>
