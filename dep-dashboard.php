@@ -1,6 +1,10 @@
-<?php require_once __DIR__ . '/db.php';
-include __DIR__ . '/includes/header.php';?>
-
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require_once __DIR__ . '/db.php';
+include __DIR__ . '/includes/header.php';
+?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -12,22 +16,26 @@ include __DIR__ . '/includes/header.php';?>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     
     <style>
-        .dashboard-layout {
+    .dashboard-layout {
     display: flex;
+    flex-direction: row; /* ترتيب العناصر بجانب بعضها */
+    justify-content: flex-start;
+    align-items: flex-start;
     min-height: calc(100vh - 140px);
-    max-width: 1400px;
-    margin: 0 auto;
     width: 100%;
+    max-width: 100%; /* لجعله يمتد بالشكل المناسب على الشاشة */
+    margin: 0;
 }
     </style>
 </head>
 <body>
 
- <div class="dashboard-layout">
-            <?php include __DIR__ . '/includes/dep-sidebar.php';?>
+<div class="dashboard-layout">
+    <?php include __DIR__ . '/includes/dep-sidebar.php';?>
     <div class="container"></div>
 </div>
-    <?php include __DIR__ . '/includes/footer.php';?>
+
+<?php include __DIR__ . '/includes/footer.php';?>
 
 </body>
 </html>

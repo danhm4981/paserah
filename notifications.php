@@ -86,13 +86,15 @@ function h($value) {
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 
     <style>
-
-        .dashboard-layout {
+.dashboard-layout {
     display: flex;
+    flex-direction: row; /* ترتيب العناصر بجانب بعضها */
+    justify-content: flex-start;
+    align-items: flex-start;
     min-height: calc(100vh - 140px);
-    max-width: 1400px;
-    margin: 0 auto;
     width: 100%;
+    max-width: 100%; /* لجعله يمتد بالشكل المناسب على الشاشة */
+    margin: 0;
 }
 
         main {

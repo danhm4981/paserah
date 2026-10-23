@@ -9,20 +9,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!empty($email) && !empty($password)) {
         
-        $stmt = $pdo->prepare("SELECT user_id, username, password FROM users WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT user_id, username, password, account_type FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
 
         if ($user && password_verify($password, $user['password'])) {
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['user_name'] = $user['username'];
             
-            header("Location: dashboard.php");
-            exit;
+            $_SESSION['user_id'] = $user['user_id'];
+            $_SESSION['user_name'] = $user['username'];
+            $_SESSION['user_type'] = $user['account_type']; 
+            
+            if ($user['account_type'] === 'patient') {
+                header("Location: dashboard.php"); 
+                exit;
+            } elseif ($user['account_type'] === 'dependent') {
+                header("Location: dep-dashboard.php"); 
+                exit;
+            } else {
+                header("Location: dashboard.php"); 
+                exit;
+            }
+
         } else {
             $error = "البريد الإلكتروني أو كلمة المرور غير صحيح.";
         }
