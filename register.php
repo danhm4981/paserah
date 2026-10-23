@@ -19,6 +19,8 @@ try{
 $check=$pdo->prepare('SELECT user_id FROM users WHERE username=? OR email=?');$check->execute([$name,$email]);
 if($check->fetch())$message=$t['exists'];
 else{$stmt=$pdo->prepare('INSERT INTO users (username,password,phone,email,birth_date,account_type) VALUES (?,?,?,?,?,?)');$stmt->execute([$name,password_hash($pass,PASSWORD_DEFAULT),$phone,$email,$birth,$selected_type]);$message=$t['success'];$success=true;}
+header("Location: dashboard.php");
+exit();
 }catch(PDOException $e){error_log($e->getMessage());$message=$t['error'];}
 }
 }
