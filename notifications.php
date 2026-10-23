@@ -86,12 +86,6 @@ function h($value) {
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 
     <style>
-      body {
-margin: 0;
-font-family: Tahoma, Arial, sans-serif;
-background: #f5f7f5;
-color: #36575b;
-}
 
         .dashboard-layout {
     display: flex;
