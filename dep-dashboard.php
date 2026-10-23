@@ -1,3 +1,4 @@
+
 <?php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -49,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     if (!in_array($patient_id, $patient_ids)) {
         $error = 'المريض غير مرتبط بحسابك.';
     } elseif ($name === '') {
-        $error = 'اكتب اسم الدواء.';
+        $error = 'اكتبي اسم الدواء.';
     } else {
         $stmt = $pdo->prepare(
             "INSERT INTO medications
@@ -87,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     if ($stmt->rowCount() > 0) {
         $message = 'تم حذف الدواء.';
     } else {
-        $error = 'لا يمكن حذف الدواء ، تأكد من ارتباط المريض.';
+        $error = 'ما قدرنا نحذف الدواء، تأكدي من ارتباط المريض.';
     }
 }
 
@@ -354,7 +355,7 @@ include __DIR__ . '/includes/header.php';
             <h2>الأدوية المسجلة</h2>
 
             <?php if (empty($medications)): ?>
-                <p class="empty">لا يوجد أدوية مسجلة للمرضى المرتبطين بحسابك.</p>
+                <p class="empty">ما فيه أدوية مسجلة للمرضى المرتبطين بحسابك.</p>
             <?php else: ?>
                 <div class="medication-grid">
                     <?php foreach ($medications as $med): ?>
@@ -381,7 +382,7 @@ include __DIR__ . '/includes/header.php';
                             </p>
 
                             <form method="POST"
-                                  onsubmit="return confirm('متأكد من حذف هذا الدواء؟');">
+                                  onsubmit="return confirm('متأكدة من حذف هذا الدواء؟');">
                                 <input type="hidden" name="medication_id"
                                        value="<?= (int)$med['medication_id'] ?>">
                                 <button type="submit" name="delete_medication"
