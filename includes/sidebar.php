@@ -1,3 +1,6 @@
+<?php
+$user_role = $_SESSION['role'] ?? 'patient'; 
+?>
 <!DOCTYPE html>
 <head>
     <style>
@@ -69,24 +72,34 @@
         .main-content {
             flex-grow: 1;
             padding: 40px;
-        }  </style>
-    </head>
-<body>
-        <!-- القائمة الجانبية -->
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <h2>لوحة المريض</h2>
-            </div>
-            <ul class="sidebar-menu">
-                <li><a href="dashboard.php"><span class="icon">🏠</span> الرئيسية</a></li>
-                <li><a href="medications.php"><span class="icon">💊</span> أدويتي</a></li>
-                <li><a href="add-medication.php"><span class="icon">➕</span> إضافة دواء</a></li>
-                <li><a href="notifications.php"><span class="icon">🔔</span> التنبيهات</a></li>
-                <li><a href="dependents.php"><span class="icon">👥</span> التابع</a></li>
-                <li><a href="subscription.php"><span class="icon">⭐</span> الاشتراك</a></li>
-                <li><a href="profile.php"><span class="icon">⚙️</span> الملف الشخصي</a></li>
-                <li class="logout"><a href="logout.php"><span class="icon">🚪</span> تسجيل الخروج</a></li>
-            </ul>
-        </aside>
-</body>
-</html>
+        } 
+        </style>
+        </head>
+        <body>
+            <aside class="sidebar">
+    <div class="sidebar-header">
+        <h2><?php echo ($user_role === 'dependent') ? 'لوحة التابع' : 'لوحة المريض'; ?></h2>
+    </div>
+    <ul class="sidebar-menu">
+        <li><a href="dashboard.php"><span class="icon">🏠</span> الرئيسية</a></li>
+
+        <?php if ($user_role === 'dependent'): ?>
+            <!-- روابط التابع -->
+            <li><a href="medications.php"><span class="icon">💊</span> أدوية المريض</a></li>
+            <li><a href="add-medication.php"><span class="icon">➕</span> إضافة دواء</a></li>
+            <li><a href="doses.php"><span class="icon">⏰</span> الجرعات</a></li>
+        <?php else: ?>
+            <!-- روابط المريض  -->
+            <li><a href="medications.php"><span class="icon">💊</span> أدويتي</a></li>
+            <li><a href="add-medication.php"><span class="icon">➕</span> إضافة دواء</a></li>
+            <li><a href="notifications.php"><span class="icon">🔔</span> التنبيهات</a></li>
+            <li><a href="dependents.php"><span class="icon">👥</span> التابع</a></li>
+            <li><a href="subscription.php"><span class="icon">⭐</span> الاشتراك</a></li>
+            <li><a href="profile.php"><span class="icon">⚙️</span> الملف الشخصي</a></li>
+        <?php endif; ?>
+
+        <li class="logout"><a href="logout.php"><span class="icon">🚪</span> تسجيل الخروج</a></li>
+    </ul>
+</aside>
+        </body>
+        </html>
