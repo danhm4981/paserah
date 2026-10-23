@@ -79,18 +79,27 @@ function h($value) {
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>التنبيهات | بصيرة</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>التنبيهات | بصيرة</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 
     <style>
-        body {
-            margin: 0;
-            font-family: Arial, Tahoma, sans-serif;
-            color: var(--text-color);
-            background: var(--page-bg);
-            line-height: 1.8;
-        }
+      body {
+margin: 0;
+font-family: Tahoma, Arial, sans-serif;
+background: #f5f7f5;
+color: #36575b;
+}
 
+        .dashboard-layout {
+    display: flex;
+    min-height: calc(100vh - 140px);
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
 
         main {
             max-width: 1000px;
@@ -170,17 +179,6 @@ function h($value) {
             font-size: 13px;
         }
 
-        .btn {
-            display: inline-block;
-            border: 1px solid var(--primary-color);
-            border-radius: 20px;
-            padding: 7px 17px;
-            background: var(--primary-color);
-            color: white;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-        }
 
         .btn:hover {
             opacity: .9;
@@ -218,6 +216,8 @@ function h($value) {
 
 <body>
 
+     <div class="dashboard-layout">
+            <?php include __DIR__ . '/includes/sidebar.php';?>
 <main>
     <div class="page-heading">
         <div>
@@ -302,6 +302,7 @@ function h($value) {
         <?php endforeach; ?>
 
     <?php endif; ?>
+                </div>
 </main>
 
 <?php include __DIR__ . '/includes/footer.php';?>

@@ -1,10 +1,6 @@
-
-
 <!DOCTYPE html>
 <head>
     <style>
-     
-
          .sidebar {
             width: 260px;
             background-color: var(--white);
@@ -82,7 +78,7 @@
                 <h2>لوحة المريض</h2>
             </div>
             <ul class="sidebar-menu">
-                <li class="active"><a href="#"><span class="icon">🏠</span> الرئيسية</a></li>
+                <li><a href="dashboard.php"><span class="icon">🏠</span> الرئيسية</a></li>
                 <li><a href="medications.php"><span class="icon">💊</span> أدويتي</a></li>
                 <li><a href="add-medication.php"><span class="icon">➕</span> إضافة دواء</a></li>
                 <li><a href="notifications.php"><span class="icon">🔔</span> التنبيهات</a></li>

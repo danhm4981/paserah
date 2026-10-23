@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['username'];
             
-            header("Location: index.php");
+            header("Location: dashboard.php");
             exit;
         } else {
             $error = "البريد الإلكتروني أو كلمة المرور غير صحيح.";

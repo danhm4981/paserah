@@ -25,6 +25,24 @@ header("Refresh: 4; url=index.php");
     <meta charset="UTF-8">
     <title>بصيرة - تم تسجيل الخروج</title>
     <style>
+<<<<<<< HEAD
+        
+        .dashboard-layout {
+    display: flex;
+    min-height: calc(100vh - 140px);
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+    </style>
+</head>
+<body>
+     <div class="dashboard-layout">
+            <?php include __DIR__ . '/includes/sidebar.php';?>
+</div>
+   <?php include __DIR__ . '/includes/footer.php';?>
+
+=======
         :root {
             --primary-color: #008080; /* اللون الأساسي */
             --primary-dark: #005a5a;
@@ -211,6 +229,7 @@ header("Refresh: 4; url=index.php");
     <footer>
         <p>©️ <?php echo date("Y"); ?> بصيرة - جميع الحقوق محفوظة</p>
     </footer>
+>>>>>>> 13e589139f5b5777ac133166ef3bd2eb752d5c01
 
 </body>
 </html>

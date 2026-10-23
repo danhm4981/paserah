@@ -3,12 +3,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once __DIR__ . '/db.php';
-
 include __DIR__ . '/includes/header.php';
 
 $patient_id = $_SESSION['user_id'] ?? 1; 
 $today = date('Y-m-d');
-
 $total_meds = 0;
 $today_doses = 0;
 $taken_doses = 0;
@@ -17,12 +15,12 @@ $doses_result = [];
 
 if (isset($pdo)) {
     try {
-        // 1. إجمالي عدد الأدوية للمريض
+        // عدد الأدوية
         $stmt_med = $pdo->prepare("SELECT COUNT(*) AS total_meds FROM medications WHERE user_id = ?");
         $stmt_med->execute([$patient_id]);
         $total_meds = $stmt_med->fetch()['total_meds'] ?? 0;
 
-        // 2. إحصائيات جرعات اليوم
+        //جرعات اليوم
         $stmt_doses = $pdo->prepare("
             SELECT COUNT(*) AS today_doses,
                    SUM(CASE WHEN ds.status = 'taken' THEN 1 ELSE 0 END) AS taken_doses,
@@ -66,20 +64,6 @@ if (isset($pdo)) {
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     
     <style>
-        body {
-            background-color: var(--bg-light);
-            color: var(--text-color);
-            line-height: 1.6;
-            direction: rtl;
-        }
-        header {
-            background-color: var(--white);
-            padding: 15px 5%;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
         .dashboard-layout {
     display: flex;
     min-height: calc(100vh - 140px);
@@ -87,15 +71,12 @@ if (isset($pdo)) {
     margin: 0 auto;
     width: 100%;
 }
-
-
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 20px;
             margin-bottom: 40px;
         }
-
         .stat-card {
             background: var(--white);
             padding: 20px;
@@ -103,42 +84,35 @@ if (isset($pdo)) {
             text-align: center;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         }
-
         .stat-card h2 {
             color: var(--primary-color);
             font-size: 28px;
         }
-
         .stat-card p {
             color: var(--text-muted);
             font-size: 14px;
         }
-
         .doses-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 20px;
             margin-top: 20px;
         }
-
         .dose-card {
             background: var(--white);
             padding: 25px;
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         }
-
         .dose-card h3 {
             color: var(--text-color);
             margin-bottom: 10px;
         }
-
         .dose-info, .dose-time {
             color: var(--text-muted);
             font-size: 14px;
             margin-bottom: 5px;
         }
-
         .status-btn {
             width: 100%;
             padding: 10px;
@@ -147,19 +121,16 @@ if (isset($pdo)) {
             margin-top: 15px;
             font-weight: 600;
         }
-
         .status-btn.taken {
             background-color: var(--primary-color);
             color: white;
             border: none;
         }
-
         .status-btn.pending {
             background-color: transparent;
             border: 1.5px solid var(--primary-color);
             color: var(--primary-color);
         }
-
         .empty-notice {
             background: var(--white);
             padding: 30px;
@@ -169,7 +140,6 @@ if (isset($pdo)) {
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
             grid-column: 1 / -1;
         }
-      
     </style>
 </head>
 <body>
@@ -184,7 +154,7 @@ if (isset($pdo)) {
                 <p style="color: var(--text-muted);">تابع أدويتك وجرعاتك بسهولة</p>
             </header>
 
-            <!--كروت الاحصائيات-->
+            <!--الكروت-->
             <section class="stats-grid">
                 <div class="stat-card">
                     <h2><?php echo $total_meds; ?></h2>

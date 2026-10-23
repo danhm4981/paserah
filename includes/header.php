@@ -16,6 +16,13 @@
             padding: 0;
             font-family: 'Tajawal', sans-serif;
         }
+            body {
+            background-color: var(--bg-light);
+            color: var(--text-color);
+            line-height: 1.6;
+            direction: rtl;
+        }
+      
         
         header {
             background-color: var(--white);

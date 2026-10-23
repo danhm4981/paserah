@@ -1,5 +1,9 @@
 <?php
 require_once __DIR__ . '/db.php';
+<<<<<<< HEAD
+include __DIR__ . '/includes/header.php';
+=======
+>>>>>>> 13e589139f5b5777ac133166ef3bd2eb752d5c01
 
 // تعديل أو حذف دواء
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -38,7 +42,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
+<<<<<<< HEAD
+=======
 
+>>>>>>> 13e589139f5b5777ac133166ef3bd2eb752d5c01
 // جلب جميع الأدوية من قاعدة البيانات
 $stmt = $pdo->query(
     "SELECT medication_id, medication_name, medication_shape,
@@ -56,6 +63,21 @@ $medicines = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
+    <title>بصيرة - لوحة المريض</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        .dashboard-layout {
+    display: flex;
+    min-height: calc(100vh - 140px);
+    max-width: 1400px;
+    margin: 0 auto;
+    width: 100%;
+}
+=======
     <title>بصيرة | أدويتي</title>
     <link rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap">
@@ -162,6 +184,7 @@ $medicines = $stmt->fetchAll(PDO::FETCH_ASSOC);
             color: white;
             border-color: var(--primary-color);
         }
+>>>>>>> 13e589139f5b5777ac133166ef3bd2eb752d5c01
 
         .btn-danger {
             background: var(--danger-bg);
@@ -280,6 +303,10 @@ $medicines = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 
 <body>
+<<<<<<< HEAD
+ <div class="dashboard-layout">
+            <?php include __DIR__ . '/includes/sidebar.php';?>
+=======
 <header>
     <nav>
         <div class="logo">
@@ -301,16 +328,24 @@ $medicines = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </nav>
 </header>
 
+>>>>>>> 13e589139f5b5777ac133166ef3bd2eb752d5c01
 <main class="dashboard-content">
     <div class="section-title">
         <h2>أدويتي</h2>
         <p>إدارة الأدوية والجرعات والمواعيد</p>
+<<<<<<< HEAD
+    </div></div>
+
+<?php include __DIR__ . '/includes/footer.php';?>
+</div>
+=======
     </div>
 
     
 <footer>
     <p>© <?= date('Y') ?> بصيرة - جميع الحقوق محفوظة</p>
 </footer>
+>>>>>>> 13e589139f5b5777ac133166ef3bd2eb752d5c01
 
 <script>
     function toggleEdit(id) {
