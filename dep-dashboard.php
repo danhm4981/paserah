@@ -555,4 +555,3 @@ if (!empty($patient_ids)) {
 
 </body>
 </html>
-```
