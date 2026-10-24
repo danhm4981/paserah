@@ -38,7 +38,7 @@ if (isset($pdo)) {
             $pending_doses = $doses_stats['pending_doses'] ?? 0;
         }
 
-        // 3. جلب قائمة جرعات اليوم
+        //  قائمة جرعات اليوم
         $stmt_list = $pdo->prepare("
             SELECT ds.schedule_id, m.medication_name, ds.dose_amount, ds.dosage_time, ds.status 
             FROM dosage_schedules ds 
@@ -66,12 +66,12 @@ if (isset($pdo)) {
     <style>
        .dashboard-layout {
     display: flex;
-    flex-direction: row; /* ترتيب العناصر بجانب بعضها */
+    flex-direction: row; 
     justify-content: flex-start;
     align-items: flex-start;
     min-height: calc(100vh - 140px);
     width: 100%;
-    max-width: 100%; /* لجعله يمتد بالشكل المناسب على الشاشة */
+    max-width: 100%;
     margin: 0;
 }
         .stats-grid {
@@ -146,10 +146,8 @@ if (isset($pdo)) {
     </style>
 </head>
 <body>
-  <!-- لوحة التحكم -->
     <div class="dashboard-layout">
             <?php include __DIR__ . '/includes/sidebar.php';?>
-        <!-- الترحيب-->
         <main class="main-content">
             
             <header class="welcome-header" style="margin-bottom: 25px;">
@@ -177,7 +175,7 @@ if (isset($pdo)) {
                 </div>
             </section>
 
-            <!-- كروت الجرعات اليوميه -->
+            <!-- كرت الجرعات اليوميه -->
             <section class="doses-section">
                 <h2 style="font-size: 20px; color: var(--text-color); margin-bottom: 20px;">جرعات اليوم</h2>
                 <div class="doses-grid">
