@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/db.php';
+include __DIR__ . '/includes/header.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -52,104 +53,25 @@ $current_sub = $stmt_curr->get_result()->fetch_assoc();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>باقات الاشتراك - بصيرة</title>
+        <title>باقات الاشتراك - بصيرة</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #008080;
-            --primary-dark: #005a5a;
-            --bg-light: #f4fbfb;
-            --text-color: #2b3e42;
-            --text-muted: #6c7a7d;
-            --white: #ffffff;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Tajawal', sans-serif;
-        }
-
+ <style>
         body {
             background-color: var(--bg-light);
             color: var(--text-color);
         }
-
-        header {
-            background-color: var(--white);
-            padding: 15px 5%;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-        }
-
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--primary-color);
-        }
-
-        .nav-links {
-            display: flex;
-            list-style: none;
-            gap: 25px;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-color);
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary-color);
-        }
-
-        .buttons {
-            display: flex;
-            gap: 12px;
-        }
-
-        .btn {
-            padding: 8px 22px;
-            border-radius: 20px;
-            font-weight: 600;
-            text-decoration: none;
-            font-size: 14px;
-            transition: all 0.3s;
-            cursor: pointer;
-            display: inline-block;
-            border: none;
-        }
-
-        .btn-outline {
-            border: 1.5px solid var(--primary-color);
-            color: var(--primary-color);
-            background: transparent;
-        }
-
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: var(--white);
-            border: 1.5px solid var(--primary-color);
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-
+        .dashboard-layout {
+    display: flex;
+    flex-direction: row; /* ترتيب العناصر بجانب بعضها */
+    justify-content: flex-start;
+    align-items: flex-start;
+    min-height: calc(100vh - 140px);
+    width: 100%;
+    max-width: 100%; /* لجعله يمتد بالشكل المناسب على الشاشة */
+    margin: 0;
+}
         .container {
             max-width: 1100px;
             margin: 40px auto;
@@ -239,26 +161,8 @@ $current_sub = $stmt_curr->get_result()->fetch_assoc();
     </style>
 </head>
 <body>
-
-    <header>
-        <nav>
-            <div class="logo">
-                <img src="logo.png" alt="شعار بصيرة" style="height: 45px; width: auto; object-fit: contain;">
-                <span>بصيرة</span>
-            </div>
-            <ul class="nav-links">
-                <li><a href="index.php">الرئيسية</a></li>
-                <li><a href="about.php">عن بصيرة</a></li>
-                <li><a href="#features">المميزات</a></li> 
-                <li><a href="contact.php">تواصل معنا</a></li>
-            </ul>
-            <div class="buttons">
-                <a href="register.php" class="btn btn-outline">إنشاء حساب</a>
-                <a href="login.php" class="btn btn-primary">تسجيل الدخول</a>
-            </div>
-        </nav>
-    </header>
-
+<div class="dashboard-layout">
+            <?php include __DIR__ . '/includes/sidebar.php';?>
     <div class="container">
         <div class="title-section">
             <h1>خطط وباقات الاشتراك</h1>
@@ -331,9 +235,7 @@ $current_sub = $stmt_curr->get_result()->fetch_assoc();
         </div>
     </div>
 
-    <footer>
-        <p>©️ <?php echo date("Y"); ?> بصيرة - جميع الحقوق محفوظة</p>
-    </footer>
-
+     </div>
+    <?php include __DIR__ . '/includes/footer.php';?>
 </body>
 </html>

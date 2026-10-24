@@ -13,13 +13,6 @@ include __DIR__ . '/includes/header.php';
 body{
     background-color: #f4fbfb
 }
-.dashboard-layout {
-    display: flex;
-    min-height: calc(100vh - 140px); 
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
-}
 /* Page Content */
 main { max-width:1200px; margin:auto; padding:40px 5%; }
 .about-hero { background:var(--white); padding:50px 35px; text-align:center; border-radius:15px; margin-bottom:35px; }
@@ -67,8 +60,6 @@ footer { background:var(--primary-color); color:var(--white); text-align:center;
 </style>
 </head>
 <body>
-    <div class="dashboard-layout">
-<?php include __DIR__ . '/includes/sidebar.php';?>
 <main>
 <section class="about-hero">
     <h1>عن بصيرة</h1>

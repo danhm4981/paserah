@@ -1,9 +1,6 @@
 <?php
 require_once __DIR__ . '/db.php';
-<<<<<<< HEAD
 include __DIR__ . '/includes/header.php';
-=======
->>>>>>> 13e589139f5b5777ac133166ef3bd2eb752d5c01
 
 // تعديل أو حذف دواء
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -42,10 +39,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
-<<<<<<< HEAD
-=======
-
->>>>>>> 13e589139f5b5777ac133166ef3bd2eb752d5c01
 // جلب جميع الأدوية من قاعدة البيانات
 $stmt = $pdo->query(
     "SELECT medication_id, medication_name, medication_shape,
@@ -63,128 +56,22 @@ $medicines = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<<<<<<< HEAD
     <title>بصيرة - لوحة المريض</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     
     <style>
-        .dashboard-layout {
+    .dashboard-layout {
     display: flex;
+    flex-direction: row; /* ترتيب العناصر بجانب بعضها */
+    justify-content: flex-start;
+    align-items: flex-start;
     min-height: calc(100vh - 140px);
-    max-width: 1400px;
-    margin: 0 auto;
     width: 100%;
+    max-width: 100%; /* لجعله يمتد بالشكل المناسب على الشاشة */
+    margin: 0;
 }
-=======
-    <title>بصيرة | أدويتي</title>
-    <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap">
-
-    <style>
-        :root {
-            --primary-color: #18a6a5;
-            --text-color: #075c6d;
-            --text-muted: #67858c;
-            --bg-color: #f5fbfa;
-            --white: #ffffff;
-            --danger-bg: #fff0f0;
-            --danger-color: #c65b5b;
-            --border-color: #cce5e3;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Cairo', sans-serif;
-            background: var(--bg-color);
-            color: var(--text-color);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        button, input {
-            font-family: inherit;
-        }
-
-        button {
-            cursor: pointer;
-        }
-
-        header {
-            background: var(--white);
-            padding: 15px 5%;
-            box-shadow: 0 2px 10px rgba(0,0,0,.03);
-        }
-
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 20px;
-            max-width: 1200px;
-            margin: auto;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--primary-color);
-        }
-
-        .logo img {
-            height: 45px;
-            width: auto;
-            object-fit: contain;
-        }
-
-        .nav-links {
-            display: flex;
-            list-style: none;
-            gap: 25px;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-color);
-        }
-
-        .buttons {
-            display: flex;
-            gap: 12px;
-        }
-
-        .btn {
-            padding: 8px 22px;
-            border-radius: 20px;
-            font-weight: 600;
-            text-decoration: none;
-            font-size: 14px;
-            display: inline-block;
-            border: 1.5px solid transparent;
-            background: transparent;
-        }
-
-        .btn-outline {
-            border-color: var(--primary-color);
-            color: var(--primary-color);
-        }
-
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
->>>>>>> 13e589139f5b5777ac133166ef3bd2eb752d5c01
 
         .btn-danger {
             background: var(--danger-bg);
@@ -303,49 +190,16 @@ $medicines = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </head>
 
 <body>
-<<<<<<< HEAD
  <div class="dashboard-layout">
             <?php include __DIR__ . '/includes/sidebar.php';?>
-=======
-<header>
-    <nav>
-        <div class="logo">
-            <img src="logo.png" alt="شعار بصيرة">
-            <span>بصيرة</span>
-        </div>
-
-        <ul class="nav-links">
-            <li><a href="index.php">الرئيسية</a></li>
-            <li><a href="about.php">عن بصيرة</a></li>
-            <li><a href="index.php#features">المميزات</a></li>
-            <li><a href="contact.php">تواصل معنا</a></li>
-        </ul>
-
-        <div class="buttons">
-            <a href="register.php" class="btn btn-outline">إنشاء حساب</a>
-            <a href="login.php" class="btn btn-primary">تسجيل الدخول</a>
-        </div>
-    </nav>
-</header>
-
->>>>>>> 13e589139f5b5777ac133166ef3bd2eb752d5c01
 <main class="dashboard-content">
     <div class="section-title">
         <h2>أدويتي</h2>
         <p>إدارة الأدوية والجرعات والمواعيد</p>
-<<<<<<< HEAD
     </div></div>
 
 <?php include __DIR__ . '/includes/footer.php';?>
 </div>
-=======
-    </div>
-
-    
-<footer>
-    <p>© <?= date('Y') ?> بصيرة - جميع الحقوق محفوظة</p>
-</footer>
->>>>>>> 13e589139f5b5777ac133166ef3bd2eb752d5c01
 
 <script>
     function toggleEdit(id) {

@@ -32,7 +32,12 @@ $dependent_id=$pdo->lastInsertId();
 $stmt=$pdo->prepare("INSERT INTO patient_dependents (patient_user_id,dependent_user_id,relationship,status) VALUES (?,?,?,'pending')");
 $stmt->execute([$patient_id,$dependent_id,'تابع']);
 }
-header('Location: dashboard.php');exit();
+if($selected_type==='patient'){
+    header('Location: dashboard.php');
+}else{
+    header('Location: dep-dashboard.php');
+}
+exit();
 }
 }
 }catch(PDOException $e){error_log($e->getMessage());$message=$t['error'];}
