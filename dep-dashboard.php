@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
     if (!in_array($patient_id, array_map('intval', $patient_ids), true)) {
         $error = 'المريض غير مرتبط بحسابك.';
     } elseif ($name === '') {
-        $error = 'اكتبي اسم الدواء.';
+        $error = 'اكتب اسم الدواء.';
     } else {
         $stmt = $pdo->prepare(
             "INSERT INTO medications
@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'
             header('Location: dep-dashboard.php?deleted=1');
             exit;
         } else {
-            $error = 'ما قدرنا نحذف الدواء، تأكدي من ارتباط المريض.';
+            $error = 'لا نستطيع نحذف الدواء، تأكد من ارتباط المريض.';
         }
     } catch (PDOException $e) {
         $error = 'تعذر حذف الدواء. قد يكون مرتبطًا بمواعيد جرعات مسجلة.';
@@ -372,7 +372,7 @@ if (!empty($patient_ids)) {
 
         <h1 class="page-title">إدارة الأدوية</h1>
         <p class="intro">
-            تابعي أدوية المرضى المرتبطين بحسابك وأضيفي الأدوية عند الحاجة.
+            تابع أدوية المرضى المرتبطين بحسابك واضافه الأدوية عند الحاجة.
         </p>
 
         <?php if ($message !== ''): ?>
@@ -392,7 +392,7 @@ if (!empty($patient_ids)) {
 
             <?php if (empty($patients)): ?>
                 <p class="empty">
-                    ما فيه مريض مرتبط بحسابك حاليًا، لذلك ما تقدري تضيفي دواء.
+                    لا يوجد مريض مرتبط بحسابك حاليًا، لذلك لا تستطيع اضافه دواء.
                 </p>
             <?php else: ?>
 
@@ -400,9 +400,9 @@ if (!empty($patient_ids)) {
                     <div class="form-grid">
 
                         <div class="form-group">
-                            <label for="patient_id">اختاري المريض</label>
+                            <label for="patient_id">اختار المريض</label>
                             <select name="patient_id" id="patient_id" required>
-                                <option value="">اختاري المريض</option>
+                                <option value="">اختار المريض</option>
 
                                 <?php foreach ($patients as $patient): ?>
                                     <option value="<?= (int) $patient['patient_user_id'] ?>">
@@ -450,7 +450,7 @@ if (!empty($patient_ids)) {
                             <textarea
                                 id="medication_description"
                                 name="medication_description"
-                                placeholder="اكتبي وصفًا أو ملاحظات عن الدواء"
+                                placeholder="اكتب وصفًا أو ملاحظات عن الدواء"
                             ></textarea>
                         </div>
 
@@ -475,7 +475,7 @@ if (!empty($patient_ids)) {
 
             <?php if (empty($medications)): ?>
                 <p class="empty">
-                    ما فيه أدوية مسجلة للمرضى المرتبطين بحسابك.
+                    لا يوجد أدوية مسجلة للمرضى المرتبطين بحسابك.
                 </p>
             <?php else: ?>
 
@@ -523,7 +523,7 @@ if (!empty($patient_ids)) {
                             <form
                                 method="POST"
                                 action="dep-dashboard.php"
-                                onsubmit="return confirm('متأكدة من حذف هذا الدواء؟');"
+                                onsubmit="return confirm('متأكد من حذف هذا الدواء؟');"
                             >
                                 <input
                                     type="hidden"
