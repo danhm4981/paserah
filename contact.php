@@ -217,8 +217,4 @@ padding: 20px;
 </main>
 <?php include __DIR__ . '/includes/footer.php'; ?>
 </body>
-<<<<<<< HEAD
 </html>
-=======
-</html>
->>>>>>> ae8ed894482edd3a9714e9aa9dc541464e771c38
