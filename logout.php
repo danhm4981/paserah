@@ -7,42 +7,30 @@ if (file_exists(__DIR__ . '/db.php')) {
     require_once __DIR__ . '/db.php';
 }
 
-// بدء الجلسة لتدميرها
+// بدء الجلسة للتحقق من حالة تسجيل الخروج
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// تدمير بيانات الجلسة (تسجيل الخروج الفعلي)
-$_SESSION = array();
-session_destroy();
+$logged_out_successfully = false;
 
-// تحويل تلقائي للرئيسية بعد 4 ثوانٍ ليتمكن المستخدم من رؤية صفحتك وتصميمك
-header("Refresh: 4; url=index.php"); 
+// معالجة الطلب عند الضغط على زر "تأكيد الخروج"
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_logout'])) {
+    // تدمير بيانات الجلسة (تسجيل الخروج الفعلي)
+    $_SESSION = array();
+    session_destroy();
+    $logged_out_successfully = true;
+    
+    // تحويل تلقائي للرئيسية بعد 3 ثوانٍ فقط بعد التأكيد
+    header("Refresh: 3; url=index.php"); 
+}
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>بصيرة - تم تسجيل الخروج</title>
+    <title>بصيرة - تسجيل الخروج</title>
     <style>
-<<<<<<< HEAD
-        
-        .dashboard-layout {
-    display: flex;
-    min-height: calc(100vh - 140px);
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
-}
-    </style>
-</head>
-<body>
-     <div class="dashboard-layout">
-            <?php include __DIR__ . '/includes/sidebar.php';?>
-</div>
-   <?php include __DIR__ . '/includes/footer.php';?>
-
-=======
         :root {
             --primary-color: #008080; /* اللون الأساسي */
             --primary-dark: #005a5a;
@@ -50,6 +38,8 @@ header("Refresh: 4; url=index.php");
             --text-color: #2b3e42;
             --text-muted: #6c7a7d;
             --white: #ffffff;
+            --danger-color: #d9534f;
+            --danger-dark: #c9302c;
         }
 
         * {
@@ -78,6 +68,7 @@ header("Refresh: 4; url=index.php");
             align-items: center;
             max-width: 1200px;
             margin: 0 auto;
+            width: 100%;
         }
 
         .logo {
@@ -120,6 +111,7 @@ header("Refresh: 4; url=index.php");
             transition: all 0.3s;
             cursor: pointer;
             display: inline-block;
+            border: none;
         }
 
         .btn-outline {
@@ -134,12 +126,23 @@ header("Refresh: 4; url=index.php");
             border: 1.5px solid var(--primary-color);
         }
 
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: var(--white);
+            border: 1.5px solid var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--danger-dark);
+            border-color: var(--danger-dark);
+        }
+
         .btn:hover {
             opacity: 0.9;
             transform: translateY(-1px);
         }
 
-        /* تنسيق محتوى وسط الصفحة الخاص بالتأكيد */
+        /* تنسيق محتوى وسط الصفحة */
         .logout-container {
             flex: 1;
             display: flex;
@@ -159,9 +162,13 @@ header("Refresh: 4; url=index.php");
         }
 
         .logout-card h2 {
-            color: var(--primary-color);
+            color: var(--text-color);
             margin-bottom: 15px;
             font-size: 24px;
+        }
+
+        .logout-card h2.success-title {
+            color: var(--primary-color);
         }
 
         .logout-card p {
@@ -169,6 +176,12 @@ header("Refresh: 4; url=index.php");
             font-size: 16px;
             line-height: 1.6;
             margin-bottom: 25px;
+        }
+
+        .logout-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
         }
 
         .loader {
@@ -192,7 +205,7 @@ header("Refresh: 4; url=index.php");
             text-align: center;
             padding: 18px;
             font-size: 14px;
-            margin-top: auto; /* ليبقى الفوتر ملتصقاً بالأسفل تماماً */
+            margin-top: auto;
         }
     </style>
 </head>
@@ -211,7 +224,6 @@ header("Refresh: 4; url=index.php");
                 <li><a href="contact.php">تواصل معنا</a></li>
             </ul>
             <div class="buttons">
-                <!-- تم إرجاع الأزرار هنا وتعديلها لتظهر كحالة زائر خرج للتو -->
                 <a href="register.php" class="btn btn-outline">إنشاء حساب</a>
                 <a href="login.php" class="btn btn-primary">تسجيل الدخول</a>
             </div>
@@ -220,16 +232,37 @@ header("Refresh: 4; url=index.php");
 
     <div class="logout-container">
         <div class="logout-card">
-            <h2>تم تسجيل الخروج بنجاح!</h2>
-            <p>شكراً لاستخدامك منصة بصيرة. لقد تم إنهاء جلستك بأمان، وسيتم تحويلك إلى الصفحة الرئيسية الآن...</p>
-            <div class="loader"></div>
+            <?php if (!$logged_out_successfully): ?>
+                <!-- حالة طلب التأكيد قبل الخروج -->
+                <h2>تأكيد تسجيل الخروج</h2>
+                <p>هل أنت متأكد من رغبتك في تسجيل الخروج من حسابك في منصة بصيرة؟</p>
+                
+                <form method="POST" action="">
+                    <div class="logout-actions">
+                        <button type="submit" name="confirm_logout" class="btn btn-danger">تأكيد الخروج</button>
+                        <a href="index.php" class="btn btn-outline">إلغاء</a>
+                    </div>
+                </form>
+            <?php else: ?>
+                <!-- حالة نجاح الخروج بعد الضغط على الزر -->
+                <h2 class="success-title">تم تسجيل الخروج بنجاح!</h2>
+                <p>شكراً لاستخدامك منصة بصيرة. لقد تم إنهاء جلستك بأمان، جاري تحويلك الآن...</p>
+                <div class="loader"></div>
+
+                <script>
+                    setTimeout(function() {
+                        window.location.href = 'index.php';
+                    }, 3000);
+                </script>
+            <?php endif; ?>
         </div>
     </div>
 
     <footer>
         <p>©️ <?php echo date("Y"); ?> بصيرة - جميع الحقوق محفوظة</p>
     </footer>
->>>>>>> 13e589139f5b5777ac133166ef3bd2eb752d5c01
-
 </body>
 </html>
+<?php
+ob_end_flush(); 
+?>
