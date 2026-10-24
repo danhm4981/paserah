@@ -53,16 +53,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // جلب إشعارات المستخدم الحالي فقط
 $stmt = $pdo->prepare(
-    "SELECT notification_id, notification_type,
-            notification_text, notification_time,
-            email_status, in_site_status, email_sent_at
-     FROM notifications
-     WHERE user_id = ?
-     ORDER BY notification_time DESC, notification_id DESC"
+    "SELECT
+        n.notification_id,
+        n.notification_type,
+        n.notification_text,
+        n.notification_time,
+        n.audio_text,
+        n.notification_image,
+        n.notification_sound,
+        n.email_status,
+        n.in_site_status,
+        n.email_sent_at,
+        ds.dose_amount,
+        ds.dose_unit,
+        ds.dosage_time,
+        ds.dosage_date,
+        m.medication_name,
+        m.medication_description,
+        m.medication_image,
+        m.medication_color,
+        m.medication_shape
+     FROM notifications AS n
+     LEFT JOIN dosage_schedules AS ds
+        ON n.schedule_id = ds.schedule_id
+     LEFT JOIN medications AS m
+        ON ds.medication_id = m.medication_id
+     WHERE n.user_id = ?
+     ORDER BY n.notification_time DESC, n.notification_id DESC"
 );
 
 $stmt->execute([$userId]);
-$notifications = $stmt->fetchAll();
+$notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 
 $unreadCount = 0;
 foreach ($notifications as $notification) {
@@ -250,7 +272,53 @@ function h($value) {
                 </div>
 
                 <p><?= nl2br(h($item['notification_text'])) ?></p>
+<?php if (!empty($item['medication_name'])): ?>
+    <div class="medicine-info">
+        <h3>معلومات الدواء</h3>
 
+        <p>
+            اسم الدواء:
+            <?= h($item['medication_name']) ?>
+        </p>
+
+        <?php if (!empty($item['medication_description'])): ?>
+            <p>
+                الوصف:
+                <?= h($item['medication_description']) ?>
+            </p>
+        <?php endif; ?>
+
+        <?php if (!empty($item['medication_shape'])): ?>
+            <p>
+                شكل الدواء:
+                <?= h($item['medication_shape']) ?>
+            </p>
+        <?php endif; ?>
+
+        <?php if (!empty($item['medication_color'])): ?>
+            <p>
+                لون الدواء:
+                <?= h($item['medication_color']) ?>
+            </p>
+        <?php endif; ?>
+
+        <?php if (!empty($item['dose_amount'])): ?>
+            <p>
+                الجرعة:
+                <?= h($item['dose_amount']) ?>
+                <?= h($item['dose_unit'] ?? '') ?>
+            </p>
+        <?php endif; ?>
+
+        <?php if (!empty($item['medication_image'])): ?>
+            <img
+                src="<?= h($item['medication_image']) ?>"
+                alt="<?= h($item['medication_name']) ?>"
+                style="max-width:120px; max-height:120px; object-fit:contain;"
+            >
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
                 <time>
                     تاريخ التنبيه:
                     <?= h($item['notification_time']) ?>
