@@ -56,12 +56,12 @@ $dependents = $stmt_list->fetchAll();
 
         .dashboard-layout {
     display: flex;
-    flex-direction: row; /* ترتيب العناصر بجانب بعضها */
+    flex-direction: row; 
     justify-content: flex-start;
     align-items: flex-start;
     min-height: calc(100vh - 140px);
     width: 100%;
-    max-width: 100%; /* لجعله يمتد بالشكل المناسب على الشاشة */
+    max-width: 100%;
     margin: 0;
 }
         :root {
