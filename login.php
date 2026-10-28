@@ -1,8 +1,9 @@
 <?php
-require_once __DIR__ . '/db.php';
-include __DIR__ . '/includes/header.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-$error = '';
+require_once __DIR__ . '/db.php';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -18,9 +19,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 session_start();
             }
             
-            $_SESSION['user_id'] = $user['user_id'];
-            $_SESSION['user_name'] = $user['username'];
-            $_SESSION['user_type'] = $user['account_type']; 
+$_SESSION['user_id'] = $user['user_id'];
+$_SESSION['user_name'] = $user['username'];
+$_SESSION['user_type'] = $user['account_type'];
+$_SESSION['account_type'] = $user['account_type'];
             
             if ($user['account_type'] === 'patient') {
                 header("Location: dashboard.php"); 
@@ -40,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "الرجاء تعبئة جميع الحقول.";
     }
 }
+include __DIR__ . '/includes/header.php';
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
