@@ -144,11 +144,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_logout'])) {
 
         /* تنسيق محتوى وسط الصفحة */
         .logout-container {
-            flex: 1;
+            position:flxed;
+            top:0;
+            right:0;
+            bottom:0;
+            left:0;
+
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            z-index:9999;
         }
 
         .logout-card {
@@ -159,6 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['confirm_logout'])) {
             text-align: center;
             max-width: 500px;
             width: 100%;
+            margin:auto;
         }
 
         .logout-card h2 {
