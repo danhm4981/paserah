@@ -24,7 +24,28 @@ $stmt->execute([$dependent_id]);
 if (!$stmt->fetch()) {
     exit('هذه الصفحة مخصصة لحساب التابع فقط.');
 }
+// معالجة الموافقة أو الرفض على طلب الربط
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['link_action'])) {
+    $request_id = (int) ($_POST['request_id'] ?? 0);
+    $action = $_POST['link_action'];
 
+    if (in_array($action, ['approve', 'reject'], true)) {
+        $status = ($action === 'approve') ? 'active' : 'rejected';
+
+        $stmt = $pdo->prepare(
+            "UPDATE patient_dependents
+             SET status = ?
+             WHERE id = ?
+             AND dependent_user_id = ?
+             AND status = 'pending'"
+        );
+
+        $stmt->execute([$status, $request_id, $dependent_id]);
+
+        header('Location: dep-dashboard.php');
+        exit;
+    }
+}
 // جلب المرضى المرتبطين بالتابع
 $stmt = $pdo->prepare(
     "SELECT pd.patient_user_id, u.username
@@ -36,7 +57,17 @@ $stmt->execute([$dependent_id]);
 $patients = $stmt->fetchAll();
 
 $patient_ids = array_column($patients, 'patient_user_id');
+// جلب طلبات الربط المعلقة
+$stmt = $pdo->prepare(
+    "SELECT pd.id, pd.relationship, u.username, u.email
+     FROM patient_dependents pd
+     JOIN users u ON u.user_id = pd.patient_user_id
+     WHERE pd.dependent_user_id = ?
+     AND pd.status = 'pending'"
+);
 
+$stmt->execute([$dependent_id]);
+$link_requests = $stmt->fetchAll();
 // إضافة دواء
 if ($_SERVER['REQUEST_METHOD'] === 'POST'
     && isset($_POST['add_medication'])) {
@@ -388,6 +419,48 @@ if (!empty($patient_ids)) {
         <?php endif; ?>
 
         <section class="card">
+            <section class="card">
+    <h2>طلبات الربط</h2>
+
+    <?php if (empty($link_requests)): ?>
+        <p class="empty">لا توجد طلبات ربط جديدة.</p>
+    <?php else: ?>
+        <?php foreach ($link_requests as $request): ?>
+            <div class="medication-card">
+                <h3>
+                    <?= htmlspecialchars($request['username']) ?>
+                </h3>
+
+                <p>
+                    البريد:
+                    <?= htmlspecialchars($request['email']) ?>
+                </p>
+
+                <p>
+                    صلة القرابة:
+                    <?= htmlspecialchars($request['relationship']) ?>
+                </p>
+
+                <form method="POST" action="dep-dashboard.php">
+                    <input type="hidden" name="request_id"
+                           value="<?= (int) $request['id'] ?>">
+
+                    <button class="btn btn-primary"
+                            type="submit" name="link_action"
+                            value="approve">
+                        موافقة
+                    </button>
+
+                    <button class="btn btn-delete"
+                            type="submit" name="link_action"
+                            value="reject">
+                        رفض
+                    </button>
+                </form>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
+</section>
             <h2>إضافة دواء جديد</h2>
 
             <?php if (empty($patients)): ?>
