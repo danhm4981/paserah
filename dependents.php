@@ -53,13 +53,8 @@ $dependents = $stmt_list->fetchAll();
     <title>إدارة التوابع - بصيرة</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
-.dashboard-layout {
+      .dashboard-layout {
     display: flex;
-<<<<<<< HEAD
-    align-items: stretch; /* لتمكين السايدبار من التمدد حتى نهاية ارتفاع الصفحة */
-    min-height: calc(100vh - 140px); /* ليملأ الفراغ دائماً في الشاشات الطويلة */
-    width: 100%;
-=======
     flex-direction: row; 
     justify-content: flex-start;
     align-items: flex-start;
@@ -67,29 +62,7 @@ $dependents = $stmt_list->fetchAll();
     width: 100%;
     max-width: 100%;
     margin: 0;
->>>>>>> 45347a2b3be33be39e37081ed6a1c11ccdfb7c38
 }
-        :root {
-            --primary-color: #008080;
-            --primary-dark: #005a5a;
-            --bg-light: #f4fbfb;
-            --text-color: #2b3e42;
-            --text-muted: #6c7a7d;
-            --white: #ffffff;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Tajawal', sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-light);
-            color: var(--text-color);
-        }
-
         .container {
             max-width: 1000px;
             margin: 40px auto;
@@ -176,14 +149,6 @@ $dependents = $stmt_list->fetchAll();
         .badge-active { background-color: #e6f4ea; color: #1e7e34; }
         .badge-pending { background-color: #fff3cd; color: #856404; }
 
-        footer {
-            background-color: var(--primary-color);
-            color: var(--white);
-            text-align: center;
-            padding: 18px;
-            font-size: 14px;
-            margin-top: 60px;
-        }
     </style>
 </head>
 <body>
