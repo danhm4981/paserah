@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/db.php';
+include __DIR__ . '/includes/header.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
@@ -76,84 +77,16 @@ if ($account_type === 'patient') {
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     
     <style>
-        :root {
-            --primary-color: #008080;
-            --primary-dark: #005a5a;
-            --bg-light: #f4fbfb;
-            --text-color: #2b3e42;
-            --text-muted: #6c7a7d;
-            --white: #ffffff;
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Tajawal', sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-light);
-            color: var(--text-color);
-            direction: rtl;
-            text-align: right;
-        }
-
-        /* تنسيق الشريط العلوي الموحد مثل الرئيسية */
-        header {
-            background-color: var(--white);
-            padding: 15px 5%;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-        }
-
-        nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 24px;
-            font-weight: 800;
-            color: var(--primary-color);
-        }
-
-        .nav-links {
-            display: flex;
-            list-style: none;
-            gap: 25px;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-color);
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary-color);
-            }
-
-        .buttons {
-            display: flex;
-            gap: 12px;
-        }
-
-        .dashboard-layout {
-            display: flex;
-            flex-direction: row;
-            justify-content: flex-start;
-            align-items: flex-start;
-            min-height: calc(100vh - 80px);
-            width: 100%;
-        }
-
+           .dashboard-layout {
+    display: flex;
+    flex-direction: row; 
+    justify-content: flex-start;
+    align-items: flex-start;
+    min-height: calc(100vh - 140px);
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+}
         .main-content {
             flex: 1;
             padding: 30px;
@@ -349,36 +282,9 @@ if ($account_type === 'patient') {
     </style>
 </head>
 <body>
-
-    <!-- الشريط العلوي الموحد الذي طلبتيه -->
-    <header>
-        <nav>
-            <div class="logo">
-                <img src="logo.png" alt="شعار بصيرة" style="height: 45px; width: auto; object-fit: contain;">
-                <span>بصيرة</span>
-            </div>
-            <ul class="nav-links">
-                <li><a href="index.php">الرئيسية</a></li>
-                <li><a href="about.php">عن بصيرة</a></li>
-                <li><a href="#features">المميزات</a></li> 
-                <li><a href="contact.php">تواصل معنا</a></li>
-            </ul>
-            <div class="buttons">
-                <a href="logout.php" class="btn btn-outline">تسجيل الخروج</a>
-            </div>
-        </nav>
-    </header>
-
-    <div class="dashboard-layout">
-        <!-- القائمة الجانبية (Sidebar) -->
-        <?php 
-        if ($account_type === 'patient' && file_exists(__DIR__ . '/includes/sidebar.php')) {
-            include __DIR__ . '/includes/sidebar.php';
-        } elseif ($account_type === 'dependent' && file_exists(__DIR__ . '/includes/dep-sidebar.php')) {
-            include __DIR__ . '/includes/dep-sidebar.php';
-        }
-        ?>
-
+ <div class="dashboard-layout">
+            <?php include __DIR__ . '/includes/sidebar.php';?>
+   
         <main class="main-content">
             <h1 class="page-header-title">الملف الشخصي</h1>
 
@@ -469,6 +375,7 @@ if ($account_type === 'patient') {
             </div>
         </main>
     </div>
+    <?php include __DIR__ . '/includes/footer.php'; ?>
 
     <script>
         function toggleEditForm() {
