@@ -1,17 +1,11 @@
 <?php
-<<<<<<< HEAD
 // الجلسة تبدأ أول شيء، قبل أي إخراج
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once __DIR__ . '/db.php';
-=======
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
->>>>>>> 45347a2b3be33be39e37081ed6a1c11ccdfb7c38
 
-require_once __DIR__ . '/db.php';
+$error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -22,7 +16,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
-<<<<<<< HEAD
             // تجديد معرّف الجلسة بعد الدخول (حماية من سرقة الجلسة)
             session_regenerate_id(true);
 
@@ -36,23 +29,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($account_type === 'dependent') {
                 header("Location: dep-dashboard.php");
-=======
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
-            
-$_SESSION['user_id'] = $user['user_id'];
-$_SESSION['user_name'] = $user['username'];
-$_SESSION['user_type'] = $user['account_type'];
-$_SESSION['account_type'] = $user['account_type'];
-            
-            if ($user['account_type'] === 'patient') {
-                header("Location: dashboard.php"); 
-                exit;
-            } elseif ($user['account_type'] === 'dependent') {
-                header("Location: dep-dashboard.php"); 
-                exit;
->>>>>>> 45347a2b3be33be39e37081ed6a1c11ccdfb7c38
             } else {
                 header("Location: dashboard.php");
             }
@@ -65,11 +41,8 @@ $_SESSION['account_type'] = $user['account_type'];
         $error = "الرجاء تعبئة جميع الحقول.";
     }
 }
-<<<<<<< HEAD
 
 // الهيدر بعد المعالجة، لأن header("Location") لا تعمل بعد أي إخراج
-=======
->>>>>>> 45347a2b3be33be39e37081ed6a1c11ccdfb7c38
 include __DIR__ . '/includes/header.php';
 ?>
 <!DOCTYPE html>
