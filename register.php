@@ -1,4 +1,7 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once __DIR__.'/db.php';
 include __DIR__.'/includes/header.php';
 
@@ -27,14 +30,29 @@ if(!$patient_id)$message=$t['invalid'];
 if(!$message){
 $stmt=$pdo->prepare('INSERT INTO users (username,password,phone,email,birth_date,account_type) VALUES (?,?,?,?,?,?)');
 $stmt->execute([$name,password_hash($pass,PASSWORD_DEFAULT),$phone,$email,$birth,$selected_type]);
-if($selected_type==='dependent'){
-$dependent_id=$pdo->lastInsertId();
-$stmt=$pdo->prepare("INSERT INTO patient_dependents (patient_user_id,dependent_user_id,relationship,status) VALUES (?,?,?,'pending')");
-$stmt->execute([$patient_id,$dependent_id,'تابع']);
+$new_user_id = (int) $pdo->lastInsertId();
+if ($selected_type === 'dependent') {
+    $stmt = $pdo->prepare("
+        INSERT INTO patient_dependents
+        (patient_user_id, dependent_user_id, relationship, status)
+        VALUES (?, ?, ?, 'pending')
+    ");
+
+    $stmt->execute([$patient_id, $new_user_id, 'تابع']);
 }
+<<<<<<< HEAD
 if($selected_type==='patient'){
     header('Location: dashboard.php');
 }else{
+=======
+$_SESSION['user_id'] = $new_user_id;
+$_SESSION['user_type'] = $selected_type;
+$_SESSION['account_type'] = $selected_type;
+
+if ($selected_type === 'patient') {
+    header('Location: dashboard.php');
+} else {
+>>>>>>> 45347a2b3be33be39e37081ed6a1c11ccdfb7c38
     header('Location: dep-dashboard.php');
 }
 exit();
@@ -83,7 +101,7 @@ footer{text-align:center;padding:20px;background:var(—primary-dark);color:var(
 <div class="form-box">
 <form method="POST" action="register.php?type=<?= $selected_type ?>&lang=<?= $lang ?>">
 <input type="hidden" name="account_type" value="<?= $selected_type ?>">
-<label for="username"><?= $t['username'] ?></label><input id="username" name="username" maxlength="50" required>
+<label for="username"><?= $t['username'] ?></label><input id="username" name="username" maxlength="50" autocomplete="off" required>
 <label for="email"><?= $t['email'] ?></label><input id="email" name="email" type="email" maxlength="100" required>
 <?php if($selected_type==='patient'): ?>
 <label for="phone"><?= $t['phone'] ?></label><input id="phone" name="phone" type="tel" maxlength="20" required>

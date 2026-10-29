@@ -55,9 +55,19 @@ $dependents = $stmt_list->fetchAll();
     <style>
 .dashboard-layout {
     display: flex;
+<<<<<<< HEAD
     align-items: stretch; /* لتمكين السايدبار من التمدد حتى نهاية ارتفاع الصفحة */
     min-height: calc(100vh - 140px); /* ليملأ الفراغ دائماً في الشاشات الطويلة */
     width: 100%;
+=======
+    flex-direction: row; 
+    justify-content: flex-start;
+    align-items: flex-start;
+    min-height: calc(100vh - 140px);
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+>>>>>>> 45347a2b3be33be39e37081ed6a1c11ccdfb7c38
 }
         :root {
             --primary-color: #008080;

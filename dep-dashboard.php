@@ -22,96 +22,144 @@ $pending_doses = 0;
 $doses_result = [];
 $error = "";
 
-try {
-    // 1. جلب المريض المرتبط بهذا التابع (بدون الاعتماد على قيمة role في الجلسة)
-    $stmt_p = $pdo->prepare("
-        SELECT u.*
-        FROM patient_dependents pd
-        JOIN users u ON u.user_id = pd.patient_user_id
-        WHERE pd.dependent_user_id = ?
-        LIMIT 1
-    ");
-    $stmt_p->execute([$current_user_id]);
-    $patient = $stmt_p->fetch() ?: null;
-
-    if ($patient) {
-        $target_user_id = $patient['user_id'];
-
-        // 2. عدد أدوية المريض المرتبط
-        $stmt_med = $pdo->prepare("SELECT COUNT(*) FROM medications WHERE user_id = ?");
-        $stmt_med->execute([$target_user_id]);
-        $total_meds = (int) $stmt_med->fetchColumn();
-
-        // 3. إحصائيات جرعات اليوم للمريض
-        $stmt_doses = $pdo->prepare("
-            SELECT COUNT(*) AS today_doses,
-                   SUM(CASE WHEN ds.status = 'taken' THEN 1 ELSE 0 END) AS taken_doses,
-                   SUM(CASE WHEN ds.status != 'taken' THEN 1 ELSE 0 END) AS pending_doses
-            FROM dosage_schedules ds
-            JOIN medications m ON ds.medication_id = m.medication_id
-            WHERE m.user_id = ? AND ds.dosage_date = ?
-        ");
-        $stmt_doses->execute([$target_user_id, $today]);
-        $doses_stats = $stmt_doses->fetch();
-
-        if ($doses_stats) {
-            $today_doses   = $doses_stats['today_doses'] ?? 0;
-            $taken_doses   = $doses_stats['taken_doses'] ?? 0;
-            $pending_doses = $doses_stats['pending_doses'] ?? 0;
-        }
-
-        // 4. قائمة جرعات اليوم للمريض
-        $stmt_list = $pdo->prepare("
-            SELECT ds.schedule_id, m.medication_name, ds.dose_amount, ds.dosage_time, ds.status
-            FROM dosage_schedules ds
-            JOIN medications m ON ds.medication_id = m.medication_id
-            WHERE m.user_id = ? AND ds.dosage_date = ?
-            ORDER BY ds.dosage_time ASC
-        ");
-        $stmt_list->execute([$target_user_id, $today]);
-        $doses_result = $stmt_list->fetchAll();
-    }
-} catch (PDOException $e) {
-    $error = "تعذر تحميل البيانات حالياً.";
-    // للتشخيص أثناء التطوير فقط: $error = $e->getMessage();
+if (!$stmt->fetch()) {
+    exit('هذه الصفحة مخصصة لحساب التابع فقط.');
 }
 
-$pat_name = $patient['full_name'] ?? $patient['name'] ?? '';
-?>
+// جلب المرضى المرتبطين بالتابع
+$stmt = $pdo->prepare(
+    "SELECT patient_user_id
+     FROM patient_dependents
+     WHERE dependent_user_id = ? AND status = 'active'"
+);
+$stmt->execute([$dependent_id]);
+$patients = $stmt->fetchAll();
 
+$patient_ids = array_column($patients, 'patient_user_id');
+
+// إضافة دواء
+if ($_SERVER['REQUEST_METHOD'] === 'POST'
+    && isset($_POST['add_medication'])) {
+
+    $patient_id = (int) ($_POST['patient_id'] ?? 0);
+    $name = trim($_POST['medication_name'] ?? '');
+    $description = trim($_POST['medication_description'] ?? '');
+    $color = trim($_POST['medication_color'] ?? '');
+    $shape = trim($_POST['medication_shape'] ?? '');
+
+    if (!in_array($patient_id, $patient_ids)) {
+        $error = 'المريض غير مرتبط بحسابك.';
+    } elseif ($name === '') {
+        $error = 'اكتبي اسم الدواء.';
+    } else {
+        $stmt = $pdo->prepare(
+            "INSERT INTO medications
+             (user_id, medication_name, medication_description,
+              medication_color, medication_shape)
+             VALUES (?, ?, ?, ?, ?)"
+        );
+
+        $stmt->execute([
+            $patient_id, $name, $description, $color, $shape
+        ]);
+
+        $message = 'تمت إضافة الدواء بنجاح.';
+    }
+}
+
+// حذف دواء مع التحقق من ملكية المريض المرتبط
+if ($_SERVER['REQUEST_METHOD'] === 'POST'
+    && isset($_POST['delete_medication'])) {
+
+    $medication_id = (int) ($_POST['medication_id'] ?? 0);
+
+    $stmt = $pdo->prepare(
+        "DELETE FROM medications
+         WHERE medication_id = ?
+         AND user_id IN (
+             SELECT patient_user_id
+             FROM patient_dependents
+             WHERE dependent_user_id = ?
+             AND status = 'active'
+         )"
+    );
+    $stmt->execute([$medication_id, $dependent_id]);
+
+    if ($stmt->rowCount() > 0) {
+        $message = 'تم حذف الدواء.';
+    } else {
+        $error = 'ما قدرنا نحذف الدواء، تأكدي من ارتباط المريض.';
+    }
+}
+
+// جلب الأدوية للمرضى المرتبطين بالتابع
+$medications = [];
+
+if (!empty($patient_ids)) {
+    $placeholders = implode(',', array_fill(0, count($patient_ids), '?'));
+
+    $stmt = $pdo->prepare(
+        "SELECT m.*, u.username
+         FROM medications m
+         JOIN users u ON u.user_id = m.user_id
+         WHERE m.user_id IN ($placeholders)
+         ORDER BY m.medication_id DESC"
+    );
+    $stmt->execute($patient_ids);
+    $medications = $stmt->fetchAll();
+}
+
+include __DIR__ . '/includes/header.php';
+?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>بصيرة - لوحة التابع</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 
     <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: #f4fbfb;
+            color: #2b3e42;
+            font-family: 'Tajawal', sans-serif;
+        }
+
         .dashboard-layout {
             display: flex;
-            align-items: stretch;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 25px;
             min-height: calc(100vh - 140px);
             width: 100%;
         }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
+
+        .container {
+            flex: 1;
+            min-width: 0;
+            padding: 30px;
         }
-        .stat-card {
-            background: var(--white);
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+
+        .page-title {
+            color: #008080;
+            margin: 0 0 8px;
         }
-        .stat-card h2 {
-            color: var(--primary-color);
-            font-size: 28px;
+
+        .intro {
+            color: #6c7a7d;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: #fff;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,.05);
+            margin-bottom: 25px;
         }
         .stat-card p {
             color: var(--text-muted);
@@ -119,29 +167,39 @@ $pat_name = $patient['full_name'] ?? $patient['name'] ?? '';
         }
         .doses-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
         }
-        .dose-card {
-            background: var(--white);
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+
+        .form-group label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: 600;
         }
-        .dose-card h3 {
-            color: var(--text-color);
-            margin-bottom: 10px;
-        }
-        .dose-info, .dose-time {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 5px;
-        }
-        .status-btn {
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
             width: 100%;
-            padding: 10px;
-            border-radius: 20px;
+            padding: 12px;
+            border: 1px solid #d7e3e3;
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 75px;
+        }
+
+        .full-width { grid-column: 1 / -1; }
+
+        .btn {
+            border: 0;
+            border-radius: 8px;
+            padding: 11px 20px;
+            font: inherit;
+            font-weight: 700;
             cursor: pointer;
             margin-top: 15px;
             font-weight: 600;
@@ -149,98 +207,194 @@ $pat_name = $patient['full_name'] ?? $patient['name'] ?? '';
         .status-btn.taken {
             background-color: var(--primary-color);
             color: white;
-            border: none;
         }
-        .status-btn.pending {
-            background-color: transparent;
-            border: 1.5px solid var(--primary-color);
-            color: var(--primary-color);
+
+        .btn-delete {
+            background: #fff0f0;
+            color: #b42318;
         }
-        .empty-notice {
-            background: var(--white);
-            padding: 30px;
-            border-radius: 15px;
+
+        .alert {
+            padding: 13px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+        }
+
+        .success { background: #e6f4ea; color: #1e7e34; }
+        .danger { background: #fce8e6; color: #b42318; }
+
+        .medication-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 18px;
+        }
+
+        .medication-card {
+            border: 1px solid #e4eeee;
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .medication-card h3 {
+            margin: 0 0 12px;
+            color: #008080;
+        }
+
+        .medication-card p {
+            line-height: 1.7;
+            overflow-wrap: anywhere;
+        }
+
+        .patient-name {
+            color: #6c7a7d;
+            font-size: 14px;
+        }
+
+        .empty {
             text-align: center;
-            color: var(--text-muted);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            grid-column: 1 / -1;
+            color: #6c7a7d;
+            padding: 25px 10px;
         }
-        .main-content {
-            flex-grow: 1;
-            padding: 40px;
+
+        @media (max-width: 700px) {
+            .dashboard-layout { gap: 8px; }
+            .container { padding: 15px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: auto; }
         }
     </style>
 </head>
 <body>
-  <div class="dashboard-layout">
-        <!-- استدعاء سايدبار التابع المخصص داخل مجلد dependent -->
-        <?php include __DIR__ . '/dependent/dep-sidebar.php'; ?>
-        <main class="main-content">
-            <header class="welcome-header" style="margin-bottom: 25px;">
-                <h1 style="font-size: 24px; color: var(--text-color);">مرحبًا بك في لوحة التابع 👋</h1>
-                <p style="color: var(--text-muted);">
-                    <?php if ($patient): ?>
-                        متابعة أدوية وجرعات المريض: <?php echo htmlspecialchars($pat_name); ?>
-                    <?php else: ?>
-                        متابعة أدوية وجرعات المريض المرتبط بسهولة
-                    <?php endif; ?>
-                </p>
-            </header>
 
-            <!-- الكروت الإحصائية -->
-            <section class="stats-grid">
-                <div class="stat-card">
-                    <h2><?php echo $total_meds; ?></h2>
-                    <p>عدد الأدوية</p>
-                </div>
-                <div class="stat-card">
-                    <h2><?php echo $today_doses; ?></h2>
-                    <p>جرعات اليوم</p>
-                </div>
-                <div class="stat-card">
-                    <h2><?php echo $taken_doses; ?></h2>
-                    <p>تم تناولها</p>
-                </div>
-                <div class="stat-card">
-                    <h2><?php echo $pending_doses; ?></h2>
-                    <p>المتبقية</p>
-                </div>
-            </section>
+<div class="dashboard-layout">
 
-            <!-- كرت الجرعات اليومية -->
-            <section class="doses-section">
-                <h2 style="font-size: 20px; color: var(--text-color); margin-bottom: 20px;">جرعات اليوم</h2>
-                <div class="doses-grid">
-                    <?php if ($error): ?>
-                        <div class="empty-notice"><p><?php echo htmlspecialchars($error); ?></p></div>
+    <?php include __DIR__ . '/includes/dep-sidebar.php'; ?>
 
-                    <?php elseif (!$patient): ?>
-                        <div class="empty-notice"><p>حسابك غير مرتبط بمريض حتى الآن.</p></div>
+    <main class="container">
+        <h1 class="page-title">إدارة الأدوية</h1>
+        <p class="intro">تابعي أدوية المرضى المرتبطين بحسابك وأضيفي الأدوية عند الحاجة.</p>
 
-                    <?php elseif (!empty($doses_result)): ?>
-                        <?php foreach ($doses_result as $row): ?>
-                            <div class="dose-card">
-                                <h3><?php echo htmlspecialchars($row['medication_name']); ?></h3>
-                                <p class="dose-info">الجرعة: <?php echo htmlspecialchars($row['dose_amount']); ?></p>
-                                <p class="dose-time">الوقت: <?php echo date("h:i A", strtotime($row['dosage_time'])); ?></p>
+        <?php if ($message): ?>
+            <div class="alert success">
+                <?= htmlspecialchars($message) ?>
+            </div>
+        <?php endif; ?>
 
-                                <?php if ($row['status'] == 'taken'): ?>
-                                    <button class="status-btn taken">تم تناول الجرعة</button>
-                                <?php else: ?>
-                                    <button class="status-btn pending">بانتظار الموعد</button>
-                                <?php endif; ?>
-                            </div>
-                        <?php endforeach; ?>
+        <?php if ($error): ?>
+            <div class="alert danger">
+                <?= htmlspecialchars($error) ?>
+            </div>
+        <?php endif; ?>
 
-                    <?php else: ?>
-                        <div class="empty-notice">
-                            <p>لا توجد جرعات مجدولة لهذا اليوم.</p>
+        <section class="card">
+            <h2>إضافة دواء جديد</h2>
+
+            <?php if (empty($patient_ids)): ?>
+                <p class="empty">ما فيه مريض مرتبط بحسابك حاليًا، لذلك ما تقدري تضيفي دواء.</p>
+            <?php else: ?>
+                <form method="POST">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="patient_id">اختاري المريض</label>
+                            <select name="patient_id" id="patient_id" required>
+                                <?php foreach ($patients as $patient): ?>
+                                    <?php
+                                    $stmt_name = $pdo->prepare(
+                                        "SELECT username FROM users WHERE user_id = ?"
+                                    );
+                                    $stmt_name->execute([$patient['patient_user_id']]);
+                                    $patient_name = $stmt_name->fetchColumn();
+                                    ?>
+                                    <option value="<?= (int)$patient['patient_user_id'] ?>">
+                                        <?= htmlspecialchars($patient_name ?: 'المريض') ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
-                    <?php endif; ?>
+
+                        <div class="form-group">
+                            <label for="medication_name">اسم الدواء</label>
+                            <input id="medication_name" name="medication_name"
+                                   type="text" maxlength="100" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="medication_color">لون الدواء</label>
+                            <input id="medication_color" name="medication_color"
+                                   type="text" maxlength="50">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="medication_shape">شكل الدواء</label>
+                            <input id="medication_shape" name="medication_shape"
+                                   type="text" maxlength="50"
+                                   placeholder="مثال: حبوب، كبسولات">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="medication_description">وصف الدواء</label>
+                            <textarea id="medication_description"
+                                      name="medication_description"></textarea>
+                        </div>
+
+                        <div class="full-width">
+                            <button class="btn btn-primary" type="submit"
+                                    name="add_medication">
+                                إضافة الدواء
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            <?php endif; ?>
+        </section>
+
+        <section class="card">
+            <h2>الأدوية المسجلة</h2>
+
+            <?php if (empty($medications)): ?>
+                <p class="empty">ما فيه أدوية مسجلة للمرضى المرتبطين بحسابك.</p>
+            <?php else: ?>
+                <div class="medication-grid">
+                    <?php foreach ($medications as $med): ?>
+                        <article class="medication-card">
+                            <h3><?= htmlspecialchars($med['medication_name']) ?></h3>
+
+                            <p class="patient-name">
+                                المريض: <?= htmlspecialchars($med['username']) ?>
+                            </p>
+
+                            <p>
+                                الوصف:
+                                <?= htmlspecialchars($med['medication_description'] ?? 'غير محدد') ?>
+                            </p>
+
+                            <p>
+                                اللون:
+                                <?= htmlspecialchars($med['medication_color'] ?? 'غير محدد') ?>
+                            </p>
+
+                            <p>
+                                الشكل:
+                                <?= htmlspecialchars($med['medication_shape'] ?? 'غير محدد') ?>
+                            </p>
+
+                            <form method="POST"
+                                  onsubmit="return confirm('متأكدة من حذف هذا الدواء؟');">
+                                <input type="hidden" name="medication_id"
+                                       value="<?= (int)$med['medication_id'] ?>">
+                                <button type="submit" name="delete_medication"
+                                        class="btn btn-delete">
+                                    حذف الدواء
+                                </button>
+                            </form>
+                        </article>
+                    <?php endforeach; ?>
                 </div>
-            </section>
-        </main>
-    </div>
+            <?php endif; ?>
+        </section>
+    </main>
+
+</div>
 
     <?php include __DIR__ . '/includes/footer.php'; ?>
 </body>
