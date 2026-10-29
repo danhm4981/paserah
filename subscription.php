@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/db.php';
+include __DIR__ . '/includes/header.php';
 
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
@@ -111,13 +112,6 @@ $current_sub = $stmt_curr->fetch(PDO::FETCH_ASSOC);
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 
     <style>
-        body {
-            background-color: var(--bg-light);
-            color: var(--text-color);
-            font-family: 'Tajawal', sans-serif;
-            margin: 0;
-        }
-
         .dashboard-layout {
             display: flex;
             flex-direction: row;
@@ -219,15 +213,6 @@ $current_sub = $stmt_curr->fetch(PDO::FETCH_ASSOC);
             text-align: center;
         }
 
-        footer {
-            background-color: var(--primary-color);
-            color: var(--white);
-            text-align: center;
-            padding: 18px;
-            font-size: 14px;
-            margin-top: 60px;
-        }
-
         @media (max-width: 800px) {
             .dashboard-layout {
                 flex-direction: column;
@@ -246,11 +231,7 @@ $current_sub = $stmt_curr->fetch(PDO::FETCH_ASSOC);
     </style>
 </head>
 <body>
-
-<?php include __DIR__ . '/includes/header.php'; ?>
-
 <div class="dashboard-layout">
-
     <?php include __DIR__ . '/includes/sidebar.php'; ?>
 
     <main class="container">
