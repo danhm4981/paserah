@@ -108,12 +108,17 @@ function h($value) {
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 
     <style>
-.dashboard-layout {
+       .dashboard-layout {
     display: flex;
-    align-items: stretch; /* لتمكين السايدبار من التمدد حتى نهاية ارتفاع الصفحة */
-    min-height: calc(100vh - 140px); /* ليملأ الفراغ دائماً في الشاشات الطويلة */
+    flex-direction: row; 
+    justify-content: flex-start;
+    align-items: flex-start;
+    min-height: calc(100vh - 140px);
     width: 100%;
+    max-width: 100%;
+    margin: 0;
 }
+      
 
         main {
             max-width: 1000px;
