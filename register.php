@@ -3,7 +3,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once __DIR__.'/db.php';
-include __DIR__.'/includes/header.php';
 
 $lang=$_GET['lang']??'ar';$lang=in_array($lang,['ar','en'],true)?$lang:'ar';$en=$lang==='en';
 $t=['title'=>$en?'Choose account type':'اختر نوع الحساب','subtitle'=>$en?'Create Account':'إنشاء حساب','patient_title'=>$en?'Patient Account':'حساب مريض','dependent_title'=>$en?'Dependent Account':'حساب تابع','patient_btn'=>$en?'Create Patient Account':'إنشاء حساب مريض','dependent_btn'=>$en?'Create Dependent Account':'إنشاء حساب تابع','username'=>$en?'Username':'اسم المستخدم','phone'=>$en?'Phone Number':'رقم الجوال','email'=>$en?'Email Address':'البريد الإلكتروني','patient_email'=>$en?'Patient Email Address':'البريد الإلكتروني للمريض','birth'=>$en?'Date of Birth':'تاريخ الميلاد','password'=>$en?'Password':'كلمة المرور','confirm'=>$en?'Confirm Password':'تأكيد كلمة المرور','submit'=>$en?'Create Account':'إنشاء الحساب','desc1'=>$en?'To manage medications doses and their schedules':'لإدارة الأدوية والجرعات ومواعيد تناولها','desc2'=>$en?'To track the patient’s medications and doses after linking approval':'لمتابعة أدوية وجرعات المريض بعد الموافقة على الربط','required'=>$en?'Please fill in all fields.':'فضلاً، عبّي جميع الحقول.','invalid'=>$en?'Please check your information.':'تحققي من صحة البيانات المدخلة.','mismatch'=>$en?'Passwords do not match.':'كلمتا المرور غير متطابقتين.','short'=>$en?'Password must be at least 8 characters.':'كلمة المرور يجب أن تكون 8 أحرف على الأقل.','exists'=>$en?'Username or email already exists.':'اسم المستخدم أو البريد الإلكتروني مستخدم مسبقًا.','error'=>$en?'Could not create account. Please try again.':'تعذر إنشاء الحساب. حاولي مرة أخرى.'];
@@ -40,11 +39,7 @@ if ($selected_type === 'dependent') {
 
     $stmt->execute([$patient_id, $new_user_id, 'تابع']);
 }
-<<<<<<< HEAD
-if($selected_type==='patient'){
-    header('Location: dashboard.php');
-}else{
-=======
+
 $_SESSION['user_id'] = $new_user_id;
 $_SESSION['user_type'] = $selected_type;
 $_SESSION['account_type'] = $selected_type;
@@ -52,7 +47,6 @@ $_SESSION['account_type'] = $selected_type;
 if ($selected_type === 'patient') {
     header('Location: dashboard.php');
 } else {
->>>>>>> 45347a2b3be33be39e37081ed6a1c11ccdfb7c38
     header('Location: dep-dashboard.php');
 }
 exit();
@@ -61,6 +55,9 @@ exit();
 }catch(PDOException $e){error_log($e->getMessage());$message=$t['error'];}
 }
 }
+
+// الهيدر بعد المعالجة حتى تعمل header('Location') بعد التسجيل
+include __DIR__.'/includes/header.php';
 ?>
 <!DOCTYPE html>
 <html lang="<?= $en?'en':'ar' ?>" dir="<?= $en?'ltr':'rtl' ?>">
@@ -71,19 +68,19 @@ exit();
 <style>
 body{background:var(--bg-light);color:var(--text-color);min-height:100vh;display:flex;flex-direction:column}
 main{width:90%;max-width:850px;margin:40px auto;flex:1;display:flex;flex-direction:column;align-items:center}
-h1{font-size:28px;margin-bottom:6px;color:var(—text-color);text-align:center}
-.sub{color:var(—text-muted);font-size:14px;margin-bottom:30px;text-align:center}
+h1{font-size:28px;margin-bottom:6px;color:var(--text-color);text-align:center}
+.sub{color:var(--text-muted);font-size:14px;margin-bottom:30px;text-align:center}
 .cards{display:flex;gap:25px;width:100%;justify-content:center}
 .card-type{flex:1;background:#ffffff;border:1px solid #e0f0f0;border-radius:16px;padding:35px 20px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 15px rgba(0,0,0,.02)}
 .icon{font-size:38px;margin-bottom:15px;display:flex;align-items:center;justify-content:center;width:100%}
-.card-title{font-size:18px;font-weight:700;margin-bottom:10px;color:var(—text-color)}
-.card-desc{font-size:13px;color:var(—text-muted);line-height:1.6;margin-bottom:25px}
+.card-title{font-size:18px;font-weight:700;margin-bottom:10px;color:var(--text-color)}
+.card-desc{font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:25px}
 .form-box{width:100%;max-width:480px;background:#ffffff;padding:30px;border-radius:16px;box-shadow:0 4px 15px rgba(0,0,0,.02);border:1px solid #e0f0f0}
-label{display:block;margin:14px 0 6px;font-size:13px;font-weight:700;color:var(—text-color)}
+label{display:block;margin:14px 0 6px;font-size:13px;font-weight:700;color:var(--text-color)}
 input{width:100%;padding:11px;border:1px solid #dcdcdc;border-radius:8px;background:#fafafa;font-size:14px}
-input:focus{outline:2px solid var(—primary-color);background:var(—white)}
+input:focus{outline:2px solid var(--primary-color);background:var(--white)}
 .message{text-align:center;padding:12px;margin:12px 0;background:#fff0ed;color:#a33b2e;border-radius:8px;font-size:13px;width:100%;max-width:480px}
-footer{text-align:center;padding:20px;background:var(—primary-dark);color:var(—white);font-size:13px;margin-top:auto}
+footer{text-align:center;padding:20px;background:var(--primary-dark);color:var(--white);font-size:13px;margin-top:auto}
 @media(max-width:768px){.cards{flex-direction:column}.nav-links{display:none}}
 </style>
 </head>
