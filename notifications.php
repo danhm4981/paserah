@@ -88,13 +88,9 @@ function h($value) {
     <style>
 .dashboard-layout {
     display: flex;
-    flex-direction: row; /* ترتيب العناصر بجانب بعضها */
-    justify-content: flex-start;
-    align-items: flex-start;
-    min-height: calc(100vh - 140px);
+    align-items: stretch; /* لتمكين السايدبار من التمدد حتى نهاية ارتفاع الصفحة */
+    min-height: calc(100vh - 140px); /* ليملأ الفراغ دائماً في الشاشات الطويلة */
     width: 100%;
-    max-width: 100%; /* لجعله يمتد بالشكل المناسب على الشاشة */
-    margin: 0;
 }
 
         main {

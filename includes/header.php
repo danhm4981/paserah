@@ -97,14 +97,14 @@
    <header>
         <nav>
             <div class="logo">
-                <img src="logo.png" alt="شعار بصيرة" style="height: 45px; width: auto; object-fit: contain;">
+                           <img src="/danah/GProject/paserah/logo.png" alt="شعار بصيرة" style="height: 45px; width: auto; object-fit: contain;">
                 <span>بصيرة</span>
             </div>
             <ul class="nav-links">
-                <li><a href="index.php">الرئيسية</a></li>
-                <li><a href="about.php">عن بصيرة</a></li>
-                <li><a href="index.php#features">المميزات</a></li>
-                <li><a href="contact.php">تواصل معنا</a></li>
+           <a href="/danah/GProject/paserah/index.php">الرئيسية</a>
+           <a href="/danah/GProject/paserah/about.php">عن بصيرة</a>
+           <a href="/danah/GProject/paserah/index.php#features">المميزات</a>
+        <a href="/danah/GProject/paserah/contact.php">تواصل معنا</a>
             </ul>
             <div class="buttons">
                 <a href="register.php" class="btn btn-outline">إنشاء حساب</a>

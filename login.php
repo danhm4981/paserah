@@ -1,6 +1,9 @@
 <?php
+// الجلسة تبدأ أول شيء، قبل أي إخراج
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 require_once __DIR__ . '/db.php';
-include __DIR__ . '/includes/header.php';
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -8,30 +11,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
 
     if (!empty($email) && !empty($password)) {
-        
         $stmt = $pdo->prepare("SELECT user_id, username, password, account_type FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user && password_verify($password, $user['password'])) {
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
-            
-            $_SESSION['user_id'] = $user['user_id'];
+            // تجديد معرّف الجلسة بعد الدخول (حماية من سرقة الجلسة)
+            session_regenerate_id(true);
+
+            $account_type = strtolower(trim($user['account_type'] ?? ''));
+
+            $_SESSION['user_id']   = $user['user_id'];
             $_SESSION['user_name'] = $user['username'];
-            $_SESSION['user_type'] = $user['account_type']; 
-            
-            if ($user['account_type'] === 'patient') {
-                header("Location: dashboard.php"); 
-                exit;
-            } elseif ($user['account_type'] === 'dependent') {
-                header("Location: dep-dashboard.php"); 
-                exit;
+            $_SESSION['account_type'] = $account_type; // الصفحات (مثل dashboard.php) تقرأ هذا المفتاح
+            $_SESSION['user_type']    = $account_type;
+            $_SESSION['role']         = $account_type; // للتوافق مع الصفحات القديمة
+
+            if ($account_type === 'dependent') {
+                header("Location: dep-dashboard.php");
             } else {
-                header("Location: dashboard.php"); 
-                exit;
+                header("Location: dashboard.php");
             }
+            exit;
 
         } else {
             $error = "البريد الإلكتروني أو كلمة المرور غير صحيح.";
@@ -40,6 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "الرجاء تعبئة جميع الحقول.";
     }
 }
+
+// الهيدر بعد المعالجة، لأن header("Location") لا تعمل بعد أي إخراج
+include __DIR__ . '/includes/header.php';
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -167,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </main>
-    <?php include __DIR__ . '/includes/footer.php';?>
+    <?php include __DIR__ . '/includes/footer.php'; ?>
 
 </body>
 </html>
