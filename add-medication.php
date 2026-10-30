@@ -19,7 +19,7 @@ if ($user_role === 'dependent') {
     $stmt_p = $pdo->prepare("SELECT patient_user_id FROM patient_dependents WHERE dependent_user_id = ?");
     $stmt_p->execute([$current_user_id]);
     $relation = $stmt_p->fetch();
-    $target_user_id = $relation['patient_user_id'] ?? $current_user_id; 
+    $target_user_id = $relation['patient_user_id'] ?? $current_user_id;
 } else {
     $target_user_id = $current_user_id;
 }
@@ -110,9 +110,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'dosage_date' => $dosage_date
             ]);
 
-            $message = "✅ تم حفظ الدواء بنجاح";
-
-        } catch(PDOException $e) {
+            $schedule_id = (int)$pdo->lastInsertId();
+            require_once __DIR__ . '/includes/notify.php';
+            notify_medication_added(
+                $pdo,
+                (int)$target_user_id,
+                $schedule_id,
+                $medication_name,
+                $dose_amount,
+                $dose_unit,
+                $dosage_time,
+                $dosage_date
+            );
+            $message = "تم حفظ الدواء بنجاح";
+        } catch (PDOException $e) {
             $error = $e->getMessage();
         }
     }
@@ -121,141 +132,160 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>إضافة دواء جديد | بصيرة</title>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-<style>
-.dashboard-layout {
-    display: flex;
-    align-items: stretch; 
-    min-height: calc(100vh - 140px);
-    width: 100%;
-}
-.container{
-    max-width:900px;
-    margin:40px auto;
-    padding:0 20px;
-    flex-grow: 1;
-}
-.card{
-    background:white;
-    border-radius:20px;
-    padding:35px;
-    box-shadow:0 10px 25px rgba(0,0,0,.05);
-}
-.page-title{
-    text-align:center;
-    color:var(--primary-color);
-    margin-bottom:25px;
-}
-.success-message{
-    background:#d4edda;
-    color:#155724;
-    padding:15px;
-    border-radius:10px;
-    margin-bottom:20px;
-    text-align:center;
-    font-weight:bold;
-}
-.error-message{
-    background:#f8d7da;
-    color:#721c24;
-    padding:15px;
-    border-radius:10px;
-    margin-bottom:20px;
-    text-align:center;
-    font-weight:bold;
-}
-.form-group{
-    margin-bottom:18px;
-}
-label{
-    display:block;
-    margin-bottom:8px;
-    font-weight:600;
-}
-input,
-select,
-textarea{
-    width:100%;
-    padding:12px;
-    border:1px solid #ddd;
-    border-radius:10px;
-}
-.row{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:15px;
-}
-.medicine-types{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:10px;
-}
-.medicine-types label{
-    border:1px solid #ddd;
-    border-radius:10px;
-    padding:12px;
-    text-align:center;
-    cursor:pointer;
-}
-.medicine-types input{
-    width:auto;
-    margin-left:5px;
-}
-.actions{
-    margin-top:20px;
-    display:flex;
-    gap:12px;
-}
-.save-btn{
-    flex:1;
-    background:var(--primary-color);
-    color:white;
-    border:none;
-    border-radius:10px;
-    padding:13px;
-    cursor:pointer;
-}
-.cancel-btn{
-    flex:1;
-    background:white;
-    color:var(--primary-color);
-    border:2px solid var(--primary-color);
-    border-radius:10px;
-    padding:13px;
-    cursor:pointer;
-}
-@media(max-width:768px){
-    .row{
-        grid-template-columns:1fr;
-    }
-    .medicine-types{
-        grid-template-columns:1fr 1fr;
-    }
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة دواء جديد | بصيرة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        .dashboard-layout {
+            display: flex;
+            align-items: stretch;
+            min-height: calc(100vh - 140px);
+            width: 100%;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            flex-grow: 1;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, .05);
+        }
+
+        .page-title {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 25px;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .medicine-types {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .medicine-types label {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .medicine-types input {
+            width: auto;
+            margin-left: 5px;
+        }
+
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .save-btn {
+            flex: 1;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 13px;
+            cursor: pointer;
+        }
+
+        .cancel-btn {
+            flex: 1;
+            background: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            border-radius: 10px;
+            padding: 13px;
+            cursor: pointer;
+        }
+
+        @media(max-width:768px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+
+            .medicine-types {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
 </head>
+
 <body>
     <div class="dashboard-layout">
-        <?php include __DIR__ . '/includes/sidebar.php';?>
-        
+        <?php include __DIR__ . '/includes/sidebar.php'; ?>
+
         <div class="container">
             <div class="card">
                 <h1 class="page-title">إضافة دواء جديد</h1>
 
-                <?php if(!empty($message)): ?>
-                <div class="success-message">
-                    <?php echo $message; ?>
-                </div>
+                <?php if (!empty($message)): ?>
+                    <div class="success-message">
+                        <?php echo $message; ?>
+                    </div>
                 <?php endif; ?>
 
-                <?php if(!empty($error)): ?>
-                <div class="error-message">
-                    <?php echo $error; ?>
-                </div>
+                <?php if (!empty($error)): ?>
+                    <div class="error-message">
+                        <?php echo $error; ?>
+                    </div>
                 <?php endif; ?>
 
                 <form method="POST">
@@ -330,7 +360,8 @@ textarea{
             </div>
         </div>
     </div>
-    
-    <?php include __DIR__ . '/includes/footer.php';?>
+
+    <?php include __DIR__ . '/includes/footer.php'; ?>
 </body>
+
 </html>

@@ -1,3 +1,12 @@
+<?php
+$headerDocumentRoot = realpath($_SERVER['DOCUMENT_ROOT'] ?? '') ?: '';
+$headerProjectRoot = realpath(__DIR__ . '/..') ?: dirname(__DIR__);
+$headerRelativeRoot = $headerDocumentRoot !== '' && stripos($headerProjectRoot, $headerDocumentRoot) === 0
+    ? substr($headerProjectRoot, strlen($headerDocumentRoot))
+    : '';
+$headerBaseUrl = '/' . trim(str_replace('\\', '/', $headerRelativeRoot), '/');
+if ($headerBaseUrl !== '/') { $headerBaseUrl .= '/'; }
+?>
 <!DOCTYPE html>
 <head>
     <style>
@@ -97,14 +106,14 @@
    <header>
         <nav>
             <div class="logo">
-                           <img src="/danah/GProject/paserah/logo.png" alt="شعار بصيرة" style="height: 45px; width: auto; object-fit: contain;">
+                           <img src="<?php echo htmlspecialchars($headerBaseUrl, ENT_QUOTES, 'UTF-8'); ?>logo.png" alt="شعار بصيرة" style="height: 45px; width: auto; object-fit: contain;">
                 <span>بصيرة</span>
             </div>
             <ul class="nav-links">
-           <a href="/danah/GProject/paserah/index.php">الرئيسية</a>
-           <a href="/danah/GProject/paserah/about.php">عن بصيرة</a>
-           <a href="/danah/GProject/paserah/index.php#features">المميزات</a>
-        <a href="/danah/GProject/paserah/contact.php">تواصل معنا</a>
+              <a href="<?php echo htmlspecialchars($headerBaseUrl, ENT_QUOTES, 'UTF-8'); ?>index.php">الرئيسية</a>
+              <a href="<?php echo htmlspecialchars($headerBaseUrl, ENT_QUOTES, 'UTF-8'); ?>about.php">عن بصيرة</a>
+              <a href="<?php echo htmlspecialchars($headerBaseUrl, ENT_QUOTES, 'UTF-8'); ?>index.php#features">المميزات</a>
+          <a href="<?php echo htmlspecialchars($headerBaseUrl, ENT_QUOTES, 'UTF-8'); ?>contact.php">تواصل معنا</a>
             </ul>
             <div class="buttons">
                 <a href="register.php" class="btn btn-outline">إنشاء حساب</a>

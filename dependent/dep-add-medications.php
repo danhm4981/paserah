@@ -98,7 +98,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'dosage_date'   => $dosage_date
                 ]);
 
+                $schedule_id = (int)$pdo->lastInsertId();
+
                 $pdo->commit();
+                require_once __DIR__ . '/../includes/notify.php';
+                notify_medication_added($pdo, (int)$target_user_id, $schedule_id,
+                    $medication_name, $dose_amount, $dose_unit, $dosage_time, $dosage_date, 'التابع');
 
                 $_SESSION['flash_success'] = "✅ تم إضافة الدواء وجرعته للمريض المرتبط بنجاح";
                 header("Location: dep-add-medications.php");
@@ -108,7 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($pdo->inTransaction()) {
                     $pdo->rollBack();
                 }
-                
+                $error = "تعذر حفظ الدواء، حاولي مرة أخرى.";
             }
         }
     }
