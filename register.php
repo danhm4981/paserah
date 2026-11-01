@@ -107,6 +107,7 @@ footer{text-align:center;padding:20px;background:var(--primary-dark);color:var(-
 <label for="patient_email"><?= $t['patient_email'] ?></label><input id="patient_email" name="patient_email" type="email" maxlength="100" required>
 <?php endif; ?>
 <label for="password"><?= $t['password'] ?></label><input id="password" name="password" type="password" minlength="8" required>
+<div id="passwordHint" style="display:none;font-size:12px;margin-top:8px;color:#d93025"> يجب أن تحتوي كلمة المرور على:<div id="length">✗ 8 أحرف على الأقل</div><div id="upper">✗ حرف كبير (A-Z)</div> <div id="lower">✗ حرف صغير (a-z)</div><div id="number">✗ رقم (0-9)</div> <div id="symbol">✗ رمز خاص (@#$!)</div></div>
 <?php if($selected_type==='patient'): ?>
 <label for="confirm_password"><?= $t['confirm'] ?></label><input id="confirm_password" name="confirm_password" type="password" minlength="8" required>
 <?php endif; ?>
@@ -116,5 +117,28 @@ footer{text-align:center;padding:20px;background:var(--primary-dark);color:var(-
 <?php endif; ?>
 </main>
 <?php include __DIR__.'/includes/footer.php'; ?>
+<script>
+const p = document.getElementById('password');
+const hint = document.getElementById('passwordHint');
+if (p) {
+ p.addEventListener('input', function () {
+hint.style.display = this.value.length ? 'block' : 'none';
+const rules = [
+['length', this.value.length >= 8],
+['upper', /[A-Z]/.test(this.value)],
+['lower', /[a-z]/.test(this.value)],
+['number', /[0-9]/.test(this.value)],
+['symbol', /[^A-Za-z0-9]/.test(this.value)]
+];
+rules.forEach(([id, valid]) => {if (rules.every(([id, valid]) => valid)) {
+hint.style.display = 'none';
+}
+const item = document.getElementById(id);
+item.textContent = (valid ? '✓ ' : '✗ ') + item.textContent.slice(2);
+item.style.color = valid ? '#008080' : '#d93025';
+});
+});
+}
+</script>
 </body>
 </html>
