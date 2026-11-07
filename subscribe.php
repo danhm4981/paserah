@@ -5,7 +5,6 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/db.php';
 
-// التحقق من تسجيل دخول 
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
@@ -15,33 +14,32 @@ $user_id = (int) $_SESSION['user_id'];
 $message = '';
 $error = '';
 
-// معالجة عملية الدفع وإتمام الاشتراك 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_payment'])) {
-    $plan_name = trim($_POST['plan_name'] ?? 'باقة المتابعة الشاملة');
-    $amount = trim($_POST['amount'] ?? '99.00');
     $card_number = trim($_POST['card_number'] ?? '');
     $card_expiry = trim($_POST['card_expiry'] ?? '');
     $card_cvv = trim($_POST['card_cvv'] ?? '');
 
-    // التحقق من المدخلات
     if (empty($card_number) || empty($card_expiry) || empty($card_cvv)) {
         $error = 'يرجى تعبئة جميع بيانات البطاقة البنكية المطلوبة.';
     } elseif (strlen($card_number) < 16) {
         $error = 'رقم البطاقة غير صحيح، يجب أن يتكون من 16 رقماً.';
     } else {
         try {
-            // إدخال سجل الاشتراك في قاعدة البيانات
-            $stmt = $pdo->prepare("INSERT INTO subscriptions (user_id, plan_name, amount, payment_status) VALUES (?, ?, ?, 'active')");
-            $stmt->execute([$user_id, $plan_name, $amount]);
+            $start_date = date('Y-m-d');
+            $end_date = date('Y-m-d', strtotime('+1 month'));
+            $plan_type = 'monthly'; 
+            $subscription_status = 'active';
 
-            $message = 'تمت عملية الدفع بنجاح! تم تفعيل اشتراكك في منصة بصيرة.';
+            $stmt = $pdo->prepare("INSERT INTO subscriptions (user_id, plan_type, start_date, end_date, subscription_status) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$user_id, $plan_type, $start_date, $end_date, $subscription_status]);
+
+            $message = 'تمت عملية الدفع بنجاح! تم تفعيل اشتراكك الشهري في منصة بصيرة.';
         } catch (PDOException $e) {
-            $error = 'حدث خطأ أثناء معالجة الاشتراك، يجى المحاولة لاحقاً.';
+            $error = 'حدث خطأ أثناء حفظ الاشتراك في قاعدة البيانات: ' . $e->getMessage();
         }
     }
 }
 
-// تضمين الهيدر الثابت للمشروع
 include __DIR__ . '/includes/header.php';
 ?>
 
@@ -92,7 +90,7 @@ include __DIR__ . '/includes/header.php';
             margin-bottom: 8px;
             font-weight: 600;
         }
-        .form-group input, .form-group select {
+        .form-group input {
             width: 100%;
             padding: 12px 15px;
             border: 1px solid #d7e3e3;
@@ -133,44 +131,25 @@ include __DIR__ . '/includes/header.php';
         }
         .success { background: #e6f4ea; color: #1e7e34; }
         .danger { background: #fce8e6; color: #b42318; }
-        
-        .plan-box {
-            background: #f4fbfb;
-            border: 1.5px solid #008080;
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .plan-box h4 { margin: 0; color: #008080; font-size: 18px; }
-        .plan-box span { font-weight: 700; font-size: 18px; color: #2b3e42; }
     </style>
 </head>
 <body>
 
 <div class="subscribe-container">
     <div class="card">
-        <h2>صفحة الدفع والاشتراك</h2>
-        <p class="intro-text">أدخلي معلومات البطاقة البنكية لإتمام تفعيل اشتراكك في المنصة.</p>
+        <h2>إتمام الاشتراك والدفع</h2>
+        <p class="intro-text">أدخلي معلومات البطاقة البنكية لإتمام تفعيل اشتراكك الشهري.</p>
 
         <?php if ($message): ?>
             <div class="alert success"><?= htmlspecialchars($message) ?></div>
         <?php endif; ?>
 
         <?php if ($error): ?>
-            <div class="alert danger"><?. htmlspecialchars($error) ?></div>
+            <div class="alert danger"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
 
         <?php if (empty($message)): ?>
         <form method="POST">
-            <!-- تفاصيل الباقة المختارة -->
-            <div class="plan-box">
-
-            <input type="hidden" name="plan_name" value="باقة المتابعة الشاملة">
-            <input type="hidden" name="amount" value="99.00">
-
             <div class="form-group">
                 <label for="card_number">رقم البطاقة البنكية</label>
                 <input type="text" id="card_number" name="card_number" placeholder="4000 1234 5678 9010" maxlength="19" required>
@@ -193,7 +172,7 @@ include __DIR__ . '/includes/header.php';
     </div>
 </div>
 
-<?php
+<?php 
 include __DIR__ . '/includes/footer.php'; 
 ?>
 
