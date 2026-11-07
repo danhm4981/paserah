@@ -8,63 +8,22 @@ try { $pdo->exec("SET time_zone = '+03:00'"); } catch (Throwable $e) {}
 const NOTIF_TYPE_ADDED    = 'تمت إضافة دواء';
 const NOTIF_TYPE_REMINDER = 'تذكير بالجرعة';
 
-/* ---------- البريد الإلكتروني ---------- */
+/* ---------- البريد الإلكتروني (تم إلغاء الخدمة) ---------- */
 function send_mail(string $to, string $toName, string $subject, string $html): bool
 {
-    $cfg = require __DIR__ . '/mail_config.php';
-    $autoload = __DIR__ . '/vendor/autoload.php';
-    if (!file_exists($autoload)) {
-        error_log('Basira: PHPMailer غير مثبت (composer require phpmailer/phpmailer)');
-        return false;
-    }
-    require_once $autoload;
-
-    $m = new \PHPMailer\PHPMailer\PHPMailer(true);
-    try {
-        $m->isSMTP();
-        $m->Host       = $cfg['host'];
-        $m->SMTPAuth   = true;
-        $m->Username   = $cfg['username'];
-        $m->Password   = $cfg['password'];
-        $m->SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-        $m->Port       = $cfg['port'];
-        $m->CharSet    = 'UTF-8';
-        $m->Timeout    = 10;
-        $m->setFrom($cfg['from'], $cfg['from_name']);
-        $m->addAddress($to, $toName);
-        $m->isHTML(true);
-        $m->Subject = $subject;
-        $m->Body    = $html;
-        $m->AltBody = trim(strip_tags(str_replace(['<br>', '</p>'], "\n", $html)));
-        return $m->send();
-    } catch (Throwable $e) {
-        error_log('Basira mail error: ' . $e->getMessage());
-        return false;
-    }
+    // تم إلغاء خدمة إرسال البريد الإلكتروني
+    return false;
 }
 
 function email_template(string $title, string $intro, array $details, string $accent = '#008080'): string
 {
-    $cfg  = require __DIR__ . '/mail_config.php';
-    $rows = '';
-    foreach ($details as $label => $value) {
-        $rows .= '<tr><td style="padding:8px 0;color:#6c7a7d;width:35%">' . htmlspecialchars($label) . '</td>'
-               . '<td style="padding:8px 0;font-weight:bold">' . htmlspecialchars((string)$value) . '</td></tr>';
-    }
-    $url = htmlspecialchars($cfg['site_url'] . 'notifications.php');
-    return '<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;background:#f8fcfc;padding:24px">'
-         . '<div style="max-width:520px;margin:auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e3eeee">'
-         . '<div style="background:' . $accent . ';color:#fff;padding:20px 24px;font-size:20px;font-weight:bold">' . htmlspecialchars($title) . '</div>'
-         . '<div style="padding:24px;color:#2b3e42">'
-         . '<p style="margin:0 0 16px;line-height:1.8">' . htmlspecialchars($intro) . '</p>'
-         . '<table style="width:100%;border-collapse:collapse;border-top:1px solid #eee">' . $rows . '</table>'
-         . '<p style="margin:24px 0 0"><a href="' . $url . '" style="background:' . $accent . ';color:#fff;text-decoration:none;padding:11px 24px;border-radius:24px;display:inline-block">فتح التنبيهات</a></p>'
-         . '</div></div></div>';
+    // تم إلغاء خدمة البريد الإلكتروني — لا يوجد قالب
+    return '';
 }
 
-/* ---------- إنشاء إشعار + إرسال بريد ---------- */
+/* ---------- إنشاء إشعار داخل الموقع فقط ---------- */
 function create_notification(PDO $pdo, int $userId, ?int $scheduleId, string $type, string $text,
-                             string $audio, string $mailSubject, array $mailDetails, string $accent): int
+                             string $audio, string $mailSubject = '', array $mailDetails = [], string $accent = '#008080'): int
 {
     $ins = $pdo->prepare(
         "INSERT INTO notifications
@@ -75,19 +34,7 @@ function create_notification(PDO $pdo, int $userId, ?int $scheduleId, string $ty
     $ins->execute([$userId, $scheduleId, $type, $text, $audio]);
     $nid = (int)$pdo->lastInsertId();
 
-    $u = $pdo->prepare("SELECT username, email FROM users WHERE user_id = ?");
-    $u->execute([$userId]);
-    $user = $u->fetch(PDO::FETCH_ASSOC);
-
-    if ($user && filter_var($user['email'], FILTER_VALIDATE_EMAIL)) {
-        $ok = send_mail($user['email'], (string)$user['username'], $mailSubject,
-                        email_template($type, $text, $mailDetails, $accent));
-        $upd = $pdo->prepare(
-            "UPDATE notifications SET email_status = ?, email_sent_at = " . ($ok ? 'NOW()' : 'NULL') . "
-             WHERE notification_id = ?"
-        );
-        $upd->execute([$ok ? 'sent' : 'failed', $nid]);
-    }
+    // تم إلغاء إرسال الإشعار عبر البريد الإلكتروني
     return $nid;
 }
 
