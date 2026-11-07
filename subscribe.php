@@ -167,12 +167,6 @@ include __DIR__ . '/includes/header.php';
         <form method="POST">
             <!-- تفاصيل الباقة المختارة -->
             <div class="plan-box">
-                <div>
-                    <h4>باقة المتابعة الشاملة</h4>
-                    <small style="color: #6c7a7d;">اشتراك شهري كامل المزايا</small>
-                </div>
-                <span>99 ر.س</span>
-            </div>
 
             <input type="hidden" name="plan_name" value="باقة المتابعة الشاملة">
             <input type="hidden" name="amount" value="99.00">
