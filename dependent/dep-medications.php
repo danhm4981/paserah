@@ -2,13 +2,11 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-// العودة خطوة للخلف للوصول لملف قاعدة البيانات في المجلد الرئيسي
 require_once __DIR__ . '/../db.php';
-include __DIR__ . '/../includes/header.php';
 
-// 1. التحقق من تسجيل الدخول
 $current_user_id = $_SESSION['user_id'] ?? null;
 
+// فحص تسجيل الدخول قبل أي إخراج
 if (!$current_user_id) {
     header("Location: ../login.php");
     exit;
@@ -19,7 +17,7 @@ $medications = [];
 $error = "";
 
 try {
-    // 2. جلب المريض المرتبط بهذا التابع (بدون الاعتماد على قيمة role في الجلسة)
+    // جلب المريض المرتبط بالتابع الحالي
     $stmt = $pdo->prepare("
         SELECT u.*
         FROM patient_dependents pd
@@ -30,18 +28,61 @@ try {
     $stmt->execute([$current_user_id]);
     $patient = $stmt->fetch() ?: null;
 
-    // 3. جلب أدوية المريض المرتبط فقط
     if ($patient) {
+        // معرّف المريض يؤخذ دائماً من الربط في القاعدة وليس من النموذج
+        $patient_id = $patient['user_id'];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+            // حذف دواء المريض (يُحذف من جدول المريض أيضاً)
+            if (isset($_POST['delete_medicine'])) {
+                $id = (int) ($_POST['medication_id'] ?? 0);
+
+                $stmt = $pdo->prepare(
+                    "DELETE FROM medications WHERE medication_id = ? AND user_id = ?"
+                );
+                $stmt->execute([$id, $patient_id]);
+
+                header("Location: dep-medications.php");
+                exit;
+            }
+
+            // تعديل دواء المريض (ينعكس على صفحة المريض وجدوله)
+            if (isset($_POST['update_medicine'])) {
+                $id = (int) ($_POST['medication_id'] ?? 0);
+                $name = trim($_POST['medication_name'] ?? '');
+                $shape = trim($_POST['medication_shape'] ?? '');
+                $color = trim($_POST['medication_color'] ?? '');
+                $description = trim($_POST['medication_description'] ?? '');
+
+                if ($name !== '' && $shape !== '') {
+                    $stmt = $pdo->prepare(
+                        "UPDATE medications
+                         SET medication_name = ?,
+                             medication_shape = ?,
+                             medication_color = ?,
+                             medication_description = ?
+                         WHERE medication_id = ? AND user_id = ?"
+                    );
+                    $stmt->execute([$name, $shape, $color, $description, $id, $patient_id]);
+                }
+
+                header("Location: dep-medications.php");
+                exit;
+            }
+        }
+
         $stmt = $pdo->prepare("SELECT * FROM medications WHERE user_id = ? ORDER BY medication_id DESC");
-        $stmt->execute([$patient['user_id']]);
+        $stmt->execute([$patient_id]);
         $medications = $stmt->fetchAll();
     }
 } catch (PDOException $e) {
-    $error = "تعذر تحميل الأدوية حالياً.";
-    // للتشخيص أثناء التطوير فقط: $error = $e->getMessage();
+    $error = "حدث خطأ أثناء معالجة البيانات، حاول مرة أخرى لاحقاً.";
 }
 
 $pat_name = $patient['full_name'] ?? $patient['name'] ?? '';
+
+include __DIR__ . '/../includes/header.php';
 ?>
 
 <!DOCTYPE html>
@@ -60,6 +101,7 @@ $pat_name = $patient['full_name'] ?? $patient['name'] ?? '';
         }
         .main-content {
             flex-grow: 1;
+            min-width: 0;
             padding: 40px;
         }
         .page-title {
@@ -74,7 +116,7 @@ $pat_name = $patient['full_name'] ?? $patient['name'] ?? '';
         }
         .meds-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 20px;
         }
         .med-card {
@@ -82,6 +124,7 @@ $pat_name = $patient['full_name'] ?? $patient['name'] ?? '';
             padding: 25px;
             border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            overflow-wrap: anywhere;
         }
         .med-card h3 {
             color: var(--text-color, #2b3e42);
@@ -101,21 +144,50 @@ $pat_name = $patient['full_name'] ?? $patient['name'] ?? '';
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
             grid-column: 1 / -1;
         }
+        .med-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .edit-form {
+            display: none;
+            margin-top: 15px;
+        }
+        .edit-form input {
+            width: 100%;
+            padding: 10px;
+            margin: 6px 0;
+            border: 1px solid var(--border-color, #d5e0e2);
+            border-radius: 10px;
+            font-family: inherit;
+        }
+
+        @media (max-width: 900px) {
+            .meds-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        @media (max-width: 600px) {
+            .meds-grid {
+                grid-template-columns: 1fr;
+            }
+            .main-content {
+                padding: 20px;
+            }
+        }
     </style>
 </head>
 <body>
-   <div class="dashboard-layout">
-        <!-- استدعاء سايدبار التابع المخصص داخل مجلد dependent -->
+    <div class="dashboard-layout">
         <?php include __DIR__ . '/dep-sidebar.php'; ?>
         <main class="main-content">
             <h1 class="page-title">أدوية المريض المرتبط</h1>
-            <?php if ($patient): ?>
-                <p class="page-sub">المريض: <?php echo htmlspecialchars($pat_name); ?></p>
-            <?php endif; ?>
+            <p class="page-sub">المريض: <?= htmlspecialchars($pat_name) ?></p>
 
             <div class="meds-grid">
                 <?php if ($error): ?>
-                    <div class="empty-notice"><p><?php echo htmlspecialchars($error); ?></p></div>
+                    <div class="empty-notice"><p><?= htmlspecialchars($error) ?></p></div>
 
                 <?php elseif (!$patient): ?>
                     <div class="empty-notice"><p>حسابك غير مرتبط بمريض حتى الآن.</p></div>
@@ -123,12 +195,30 @@ $pat_name = $patient['full_name'] ?? $patient['name'] ?? '';
                 <?php elseif (!empty($medications)): ?>
                     <?php foreach ($medications as $med): ?>
                         <div class="med-card">
-                            <h3>💊 <?php echo htmlspecialchars($med['medication_name']); ?></h3>
-                            <p class="med-info"><strong>الشكل:</strong> <?php echo htmlspecialchars($med['medication_shape'] ?? ''); ?></p>
-                            <p class="med-info"><strong>اللون:</strong> <?php echo htmlspecialchars($med['medication_color'] ?? ''); ?></p>
+                            <h3>💊 <?= htmlspecialchars($med['medication_name']) ?></h3>
+                            <p class="med-info"><strong>الشكل:</strong> <?= htmlspecialchars($med['medication_shape'] ?? '') ?></p>
+                            <p class="med-info"><strong>اللون:</strong> <?= htmlspecialchars($med['medication_color'] ?? '') ?></p>
                             <?php if (!empty($med['medication_description'])): ?>
-                                <p class="med-info"><strong>ملاحظات:</strong> <?php echo htmlspecialchars($med['medication_description']); ?></p>
+                                <p class="med-info"><strong>ملاحظات:</strong> <?= htmlspecialchars($med['medication_description']) ?></p>
                             <?php endif; ?>
+
+                            <div class="med-actions">
+                                <button type="button" onclick="toggleEdit(<?= (int)$med['medication_id'] ?>)">تعديل</button>
+
+                                <form method="POST" onsubmit="return confirm('متأكد من الحذف؟');">
+                                    <input type="hidden" name="medication_id" value="<?= (int)$med['medication_id'] ?>">
+                                    <button type="submit" name="delete_medicine">حذف</button>
+                                </form>
+                            </div>
+
+                            <form method="POST" class="edit-form" id="edit-<?= (int)$med['medication_id'] ?>">
+                                <input type="hidden" name="medication_id" value="<?= (int)$med['medication_id'] ?>">
+                                <input type="text" name="medication_name" value="<?= htmlspecialchars($med['medication_name']) ?>" placeholder="اسم الدواء" required>
+                                <input type="text" name="medication_shape" value="<?= htmlspecialchars($med['medication_shape'] ?? '') ?>" placeholder="الشكل" required>
+                                <input type="text" name="medication_color" value="<?= htmlspecialchars($med['medication_color'] ?? '') ?>" placeholder="اللون">
+                                <input type="text" name="medication_description" value="<?= htmlspecialchars($med['medication_description'] ?? '') ?>" placeholder="ملاحظات">
+                                <button type="submit" name="update_medicine">حفظ التعديل</button>
+                            </form>
                         </div>
                     <?php endforeach; ?>
 
@@ -141,5 +231,11 @@ $pat_name = $patient['full_name'] ?? $patient['name'] ?? '';
         </main>
     </div>
     <?php include __DIR__ . '/../includes/footer.php'; ?>
+    <script>
+        function toggleEdit(id) {
+            const form = document.getElementById('edit-' + id);
+            form.style.display = form.style.display === 'block' ? 'none' : 'block';
+        }
+    </script>
 </body>
 </html>
