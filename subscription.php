@@ -1,4 +1,3 @@
-
 <?php
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -17,25 +16,13 @@ $user_id = (int) $_SESSION['user_id'];
 $message = '';
 $error = '';
 
-// التعامل مع اختيار الاشتراك
+// التعامل مع اختيار الباقة المجانية فقط (لأنها لا تحتاج دفع)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subscribe_plan'])) {
-
     $plan_type = $_POST['plan_type'] ?? '';
 
-    // التأكد من نوع الباقة
-    if (!in_array($plan_type, ['free', 'monthly', 'yearly'], true)) {
-        $error = 'الباقة المختارة غير صحيحة.';
-    } else {
+    if ($plan_type === 'free') {
         $start_date = date('Y-m-d');
-
-        if ($plan_type === 'monthly') {
-            $end_date = date('Y-m-d', strtotime('+1 month'));
-        } elseif ($plan_type === 'yearly') {
-            $end_date = date('Y-m-d', strtotime('+1 year'));
-        } else {
-            $end_date = null;
-        }
-
+        $end_date = null;
         $status = 'active';
 
         try {
@@ -48,23 +35,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subscribe_plan'])) {
                  WHERE user_id = ?
                  AND subscription_status = 'active'"
             );
-
             $stmt_cancel->execute([$user_id]);
 
-            // إضافة الاشتراك الجديد
+            // إضافة الاشتراك المجاني الجديد
             $stmt_sub = $pdo->prepare(
                 "INSERT INTO subscriptions
                 (user_id, plan_type, start_date, end_date, subscription_status)
                 VALUES (?, ?, ?, ?, ?)"
             );
-
-            $stmt_sub->execute([
-                $user_id,
-                $plan_type,
-                $start_date,
-                $end_date,
-                $status
-            ]);
+            $stmt_sub->execute([$user_id, $plan_type, $start_date, $end_date, $status]);
 
             $pdo->commit();
 
@@ -75,7 +54,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subscribe_plan'])) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-
             $error = 'حدث خطأ أثناء تفعيل الاشتراك.';
         }
     }
@@ -83,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['subscribe_plan'])) {
 
 // رسائل العملية
 if (isset($_GET['success'])) {
-    $message = 'تم تفعيل الاشتراك بنجاح!';
+    $message = 'تم تفعيل الاشتراك المجاني بنجاح!';
 }
 
 // جلب الاشتراك الحالي
@@ -95,7 +73,6 @@ $stmt_curr = $pdo->prepare(
      ORDER BY subscription_id DESC
      LIMIT 1"
 );
-
 $stmt_curr->execute([$user_id]);
 $current_sub = $stmt_curr->fetch(PDO::FETCH_ASSOC);
 ?>
@@ -217,13 +194,11 @@ $current_sub = $stmt_curr->fetch(PDO::FETCH_ASSOC);
             .dashboard-layout {
                 flex-direction: column;
             }
-
             .container {
                 width: auto;
                 margin: 25px auto;
                 padding: 0 15px;
             }
-
             .plans-grid {
                 grid-template-columns: 1fr;
             }
@@ -270,7 +245,6 @@ $current_sub = $stmt_curr->fetch(PDO::FETCH_ASSOC);
 
                 <form action="subscription.php" method="POST">
                     <input type="hidden" name="plan_type" value="free">
-
                     <button type="submit" name="subscribe_plan"
                             class="btn btn-outline"
                             style="width: 100%;">
@@ -279,7 +253,7 @@ $current_sub = $stmt_curr->fetch(PDO::FETCH_ASSOC);
                 </form>
             </div>
 
-            <!-- الباقة الشهرية -->
+            <!-- الباقة الشهرية (تحولك لصفحة الدفع subscribe.php) -->
             <div class="plan-card <?= ($current_sub && $current_sub['plan_type'] === 'monthly') ? 'active-plan' : '' ?>">
                 <div>
                     <div class="plan-title">الباقة الشهرية</div>
@@ -293,18 +267,16 @@ $current_sub = $stmt_curr->fetch(PDO::FETCH_ASSOC);
                     </ul>
                 </div>
 
-                <form action="subscription.php" method="POST">
-                    <input type="hidden" name="plan_type" value="monthly">
-
-                    <button type="submit" name="subscribe_plan"
-                            class="btn btn-primary"
-                            style="width: 100%;">
-                        <?= ($current_sub && $current_sub['plan_type'] === 'monthly') ? 'خطة حالية' : 'اشترك الآن' ?>
-                    </button>
-                </form>
+                <?php if ($current_sub && $current_sub['plan_type'] === 'monthly'): ?>
+                    <button class="btn btn-primary" style="width: 100%;" disabled>خطة حالية</button>
+                <?php else: ?>
+                    <a href="subscribe.php?plan=monthly" class="btn btn-primary" style="width: 100%; display: block; text-decoration: none; text-align: center; box-sizing: border-box; padding: 10px;">
+                        اشترك الآن
+                    </a>
+                <?php endif; ?>
             </div>
 
-            <!-- الباقة السنوية -->
+            <!-- الباقة السنوية (تحولك لصفحة الدفع subscribe.php) -->
             <div class="plan-card <?= ($current_sub && $current_sub['plan_type'] === 'yearly') ? 'active-plan' : '' ?>">
                 <div>
                     <div class="plan-title">الباقة السنوية</div>
@@ -318,15 +290,13 @@ $current_sub = $stmt_curr->fetch(PDO::FETCH_ASSOC);
                     </ul>
                 </div>
 
-                <form action="subscription.php" method="POST">
-                    <input type="hidden" name="plan_type" value="yearly">
-
-                    <button type="submit" name="subscribe_plan"
-                            class="btn btn-primary"
-                            style="width: 100%;">
-                        <?= ($current_sub && $current_sub['plan_type'] === 'yearly') ? 'خطة حالية' : 'اشترك الآن' ?>
-                    </button>
-                </form>
+                <?php if ($current_sub && $current_sub['plan_type'] === 'yearly'): ?>
+                    <button class="btn btn-primary" style="width: 100%;" disabled>خطة حالية</button>
+                <?php else: ?>
+                    <a href="subscribe.php?plan=yearly" class="btn btn-primary" style="width: 100%; display: block; text-decoration: none; text-align: center; box-sizing: border-box; padding: 10px;">
+                        اشترك الآن
+                    </a>
+                <?php endif; ?>
             </div>
 
         </div>
