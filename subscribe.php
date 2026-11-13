@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/db.php';
 
+// التحقق من تسجيل دخول المستخدم
 if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
     exit;
@@ -14,6 +15,20 @@ $user_id = (int) $_SESSION['user_id'];
 $message = '';
 $error = '';
 
+// استقبال نوع الباقة من الرابط (الافتراضي شهري)
+$plan_key = $_GET['plan'] ?? 'monthly';
+
+if ($plan_key === 'yearly') {
+    $plan_type = 'yearly';
+    $plan_name = 'باقة المتابعة السنوية';
+    $plan_price = '990 ر.س';
+} else {
+    $plan_type = 'monthly';
+    $plan_name = 'باقة المتابعة الشهرية';
+    $plan_price = '99 ر.س';
+}
+
+// معالجة إرسال نموذج الدفع
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_payment'])) {
     $card_number = trim($_POST['card_number'] ?? '');
     $card_expiry = trim($_POST['card_expiry'] ?? '');
@@ -26,14 +41,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['process_payment'])) {
     } else {
         try {
             $start_date = date('Y-m-d');
-            $end_date = date('Y-m-d', strtotime('+1 month'));
-            $plan_type = 'monthly'; 
+            // تحديد تاريخ النهاية بناءً على الباقة
+            $end_date = ($plan_type === 'yearly') ? date('Y-m-d', strtotime('+1 year')) : date('Y-m-d', strtotime('+1 month'));
             $subscription_status = 'active';
 
+            // إدخال البيانات في جدول subscriptions المتطابق مع قاعدة بياناتكم
             $stmt = $pdo->prepare("INSERT INTO subscriptions (user_id, plan_type, start_date, end_date, subscription_status) VALUES (?, ?, ?, ?, ?)");
             $stmt->execute([$user_id, $plan_type, $start_date, $end_date, $subscription_status]);
 
-            $message = 'تمت عملية الدفع بنجاح! تم تفعيل اشتراكك الشهري في منصة بصيرة.';
+            $message = 'تمت عملية الدفع بنجاح! تم تفعيل ' . $plan_name . ' في منصة بصيرة.';
         } catch (PDOException $e) {
             $error = 'حدث خطأ أثناء حفظ الاشتراك في قاعدة البيانات: ' . $e->getMessage();
         }
@@ -48,7 +64,7 @@ include __DIR__ . '/includes/header.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بصيرة - اشتراك ودفع الأجور</title>
+    <title>بصيرة - إتمام الاشتراك</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; }
@@ -82,6 +98,18 @@ include __DIR__ . '/includes/header.php';
             margin-bottom: 30px;
             font-size: 15px;
         }
+        .plan-summary {
+            background: #f4fbfb;
+            border: 1.5px solid #008080;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .plan-summary h4 { margin: 0; color: #008080; font-size: 18px; }
+        .plan-summary span { font-weight: 700; font-size: 18px; color: #2b3e42; }
         .form-group {
             margin-bottom: 20px;
         }
@@ -138,7 +166,7 @@ include __DIR__ . '/includes/header.php';
 <div class="subscribe-container">
     <div class="card">
         <h2>إتمام الاشتراك والدفع</h2>
-        <p class="intro-text">أدخلي معلومات البطاقة البنكية لإتمام تفعيل اشتراكك الشهري.</p>
+        <p class="intro-text">أدخلي معلومات البطاقة البنكية لإتمام تفعيل اشتراكك.</p>
 
         <?php if ($message): ?>
             <div class="alert success"><?= htmlspecialchars($message) ?></div>
@@ -149,6 +177,16 @@ include __DIR__ . '/includes/header.php';
         <?php endif; ?>
 
         <?php if (empty($message)): ?>
+        
+        <!-- صندوق يوضح الباقة التي تم اختيارها -->
+        <div class="plan-summary">
+            <div>
+                <h4><?= htmlspecialchars($plan_name) ?></h4>
+                <small style="color: #6c7a7d;">اشتراك آمن ومفعل فوراً</small>
+            </div>
+            <span><?= htmlspecialchars($plan_price) ?></span>
+        </div>
+
         <form method="POST">
             <div class="form-group">
                 <label for="card_number">رقم البطاقة البنكية</label>
