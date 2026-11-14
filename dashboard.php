@@ -2,7 +2,7 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-
+date_default_timezone_set('Asia/Riyadh');
 require_once __DIR__ . '/db.php';
 
 if (
@@ -52,7 +52,6 @@ $stmt = $pdo->prepare("
 $stmt->execute([$patient_id]);
 $link_requests = $stmt->fetchAll();
 
-// إحصائيات المريض
 $today = date('Y-m-d');
 $total_meds = 0;
 $today_doses = 0;
@@ -75,9 +74,11 @@ try {
                SUM(CASE WHEN ds.status != 'taken' THEN 1 ELSE 0 END) AS pending_doses
         FROM dosage_schedules ds
         JOIN medications m ON ds.medication_id = m.medication_id
-        WHERE m.user_id = ? AND ds.dosage_date = ?
+        WHERE m.user_id = ?
+          AND ds.start_date <= ?
+          AND (ds.end_date IS NULL OR ds.end_date >= ?)
     ");
-    $stmt_doses->execute([$patient_id, $today]);
+    $stmt_doses->execute([$patient_id, $today, $today]);
     $doses_stats = $stmt_doses->fetch();
 
     if ($doses_stats) {
@@ -88,13 +89,15 @@ try {
 
     $stmt_list = $pdo->prepare("
         SELECT ds.schedule_id, m.medication_name,
-               ds.dose_amount, ds.dosage_time, ds.status
+               ds.dose_amount, ds.dose_unit, ds.dosage_time, ds.status
         FROM dosage_schedules ds
         JOIN medications m ON ds.medication_id = m.medication_id
-        WHERE m.user_id = ? AND ds.dosage_date = ?
+        WHERE m.user_id = ?
+          AND ds.start_date <= ?
+          AND (ds.end_date IS NULL OR ds.end_date >= ?)
         ORDER BY ds.dosage_time ASC
     ");
-    $stmt_list->execute([$patient_id, $today]);
+    $stmt_list->execute([$patient_id, $today, $today]);
     $doses_result = $stmt_list->fetchAll();
 
 } catch (PDOException $e) {
@@ -242,7 +245,7 @@ try {
         <?php endforeach; ?>
     <?php endif; ?>
 </section>
-            <!--الكروت-->
+            
             <section class="stats-grid">
                 <div class="stat-card">
                     <h2><?php echo $total_meds; ?></h2>
@@ -262,7 +265,6 @@ try {
                 </div>
             </section>
 
-            <!-- كرت الجرعات اليوميه -->
             <section class="doses-section">
                 <h2 style="font-size: 20px; color: var(--text-color); margin-bottom: 20px;">جرعات اليوم</h2>
                 <div class="doses-grid">
@@ -270,7 +272,7 @@ try {
                         <?php foreach($doses_result as $row): ?>
                             <div class="dose-card">
                                 <h3><?php echo htmlspecialchars($row['medication_name']); ?></h3>
-                                <p class="dose-info">الجرعة: <?php echo htmlspecialchars($row['dose_amount']); ?></p>
+                                <p class="dose-info">الجرعة: <?php echo htmlspecialchars($row['dose_amount'] . ' ' . $row['dose_unit']); ?></p>
                                 <p class="dose-time">الوقت: <?php echo date("h:i A", strtotime($row['dosage_time'])); ?></p>
                                 
                                 <?php if ($row['status'] == 'taken'): ?>
