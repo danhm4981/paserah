@@ -15,18 +15,33 @@ if (!$current_user_id) {
 $patient = null;
 $medications = [];
 $error = "";
+$link_status = null; // pending / rejected / null (لا يوجد طلب)
 
 try {
-    // جلب المريض المرتبط بالتابع الحالي
+    // جلب المريض المرتبط بالتابع الحالي (فقط إذا وافق المريض على الطلب)
     $stmt = $pdo->prepare("
         SELECT u.*
         FROM patient_dependents pd
         JOIN users u ON u.user_id = pd.patient_user_id
         WHERE pd.dependent_user_id = ?
+          AND pd.status = 'active'
         LIMIT 1
     ");
     $stmt->execute([$current_user_id]);
     $patient = $stmt->fetch() ?: null;
+
+    // إذا لا يوجد ربط مفعّل، نعرف حالة آخر طلب لعرض رسالة مناسبة
+    if (!$patient) {
+        $stmt = $pdo->prepare("
+            SELECT status
+            FROM patient_dependents
+            WHERE dependent_user_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+        ");
+        $stmt->execute([$current_user_id]);
+        $link_status = $stmt->fetchColumn() ?: null;
+    }
 
     if ($patient) {
         // معرّف المريض يؤخذ دائماً من الربط في القاعدة وليس من النموذج
@@ -183,11 +198,19 @@ include __DIR__ . '/../includes/header.php';
         <?php include __DIR__ . '/dep-sidebar.php'; ?>
         <main class="main-content">
             <h1 class="page-title">أدوية المريض المرتبط</h1>
-            <p class="page-sub">المريض: <?= htmlspecialchars($pat_name) ?></p>
+            <?php if ($patient): ?>
+                <p class="page-sub">المريض: <?= htmlspecialchars($pat_name) ?></p>
+            <?php endif; ?>
 
             <div class="meds-grid">
                 <?php if ($error): ?>
                     <div class="empty-notice"><p><?= htmlspecialchars($error) ?></p></div>
+
+                <?php elseif (!$patient && $link_status === 'pending'): ?>
+                    <div class="empty-notice"><p>طلب الربط بانتظار موافقة المريض. ستظهر الأدوية بعد القبول.</p></div>
+
+                <?php elseif (!$patient && $link_status === 'rejected'): ?>
+                    <div class="empty-notice"><p>تم رفض طلب الربط من قبل المريض.</p></div>
 
                 <?php elseif (!$patient): ?>
                     <div class="empty-notice"><p>حسابك غير مرتبط بمريض حتى الآن.</p></div>
