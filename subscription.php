@@ -89,16 +89,17 @@ $current_sub = $stmt_curr->fetch(PDO::FETCH_ASSOC);
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 
     <style>
-        .dashboard-layout {
-            display: flex;
-            flex-direction: row;
-            justify-content: flex-start;
-            align-items: flex-start;
-            min-height: calc(100vh - 140px);
-            width: 100%;
-            max-width: 100%;
-            margin: 0;
-        }
+        
+       .dashboard-layout {
+    display: flex;
+    flex-direction: row; 
+    justify-content: flex-start;
+    align-items: flex-start;
+    min-height: calc(100vh - 140px);
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+}
 
         .container {
             flex: 1;
