@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/db.php';
+include __DIR__ . '/includes/header.php';
 
 $current_user_id = $_SESSION['user_id'] ?? null;
 $user_role = strtolower(trim($_SESSION['role'] ?? 'patient'));
@@ -163,82 +164,15 @@ VALUES
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 
 <style>
-
-:root{
-    --primary-color:#008080;
-    --primary-dark:#005a5a;
-    --bg-light:#f4fbfb;
-    --text-color:#2b3e42;
-    --text-muted:#6c7a7d;
-    --white:#ffffff;
-}
-
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:'Tajawal',sans-serif;
-}
-
-body{
-    background:var(--bg-light);
-    color:var(--text-color);
-}
-
-header{
-    background:var(--white);
-    padding:15px 5%;
-    box-shadow:0 2px 10px rgba(0,0,0,.05);
-}
-
-nav{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    max-width:1200px;
-    margin:auto;
-}
-
-.logo{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    font-size:24px;
-    font-weight:800;
-    color:var(--primary-color);
-}
-
-.nav-links{
-    list-style:none;
-    display:flex;
-    gap:25px;
-}
-
-.nav-links a{
-    text-decoration:none;
-    color:var(--text-color);
-}
-
-.buttons{
-    display:flex;
-    gap:10px;
-}
-
-.btn{
-    padding:8px 20px;
-    border-radius:20px;
-    text-decoration:none;
-    font-weight:600;
-}
-
-.btn-outline{
-    border:1px solid var(--primary-color);
-    color:var(--primary-color);
-}
-
-.btn-primary{
-    background:var(--primary-color);
-    color:#fff;
+  .dashboard-layout {
+    display: flex;
+    flex-direction: row; 
+    justify-content: flex-start;
+    align-items: flex-start;
+    min-height: calc(100vh - 140px);
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
 }
 
 .card{
@@ -343,13 +277,6 @@ padding:12px;border:1px solid #ddd;border-radius:10px;}
     cursor:pointer;
 }
 
-footer{
-    background:var(--primary-color);
-    color:white;
-    text-align:center;
-    padding:18px;
-    margin-top:50px;
-}
 
 @media(max-width:768px){
 
@@ -364,12 +291,6 @@ footer{
     .nav-links{
         display:none;
     }
-}
-.dashboard-layout {
-    display: flex;
-    align-items: stretch; 
-    min-height: calc(100vh - 140px);
-    width: 100%;
 }
 .container{
     flex: 1;
@@ -416,29 +337,6 @@ select{
 </head>
 
 <body>
-<header>
-<nav>
-
-<div class="logo">
-<img src="logo.png" alt="بصيرة" style="height:45px;">
-<span>بصيرة</span>
-</div>
-
-<ul class="nav-links">
-<li><a href="index.php">الرئيسية</a></li>
-<li><a href="about.php">عن بصيرة</a></li>
-<li><a href="contact.php">تواصل معنا</a></li>
-</ul>
-
-<div class="buttons">
-<a href="register.php" class="btn btn-outline">إنشاء حساب</a>
-<a href="login.php" class="btn btn-primary">تسجيل الدخول</a>
-</div>
-
-</nav>
-</header>
-
-
 <div class="dashboard-layout">
 
     <?php include __DIR__ . '/includes/sidebar.php'; ?>
@@ -599,11 +497,8 @@ placeholder="مثال: أموكسيسيلين">
     </div>
 
 </div>
+  <?php include __DIR__ . '/includes/footer.php';?>
 
-
-<footer>
-    <p>© <?php echo date("Y"); ?> بصيرة - جميع الحقوق محفوظة</p>
-</footer>
 
 </body>
 </html>
