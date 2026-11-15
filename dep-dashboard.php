@@ -18,7 +18,7 @@ if (
 $dependent_id = (int) $_SESSION['user_id'];
 
 $patient = null;
-$link_state = 'none';   // active | pending | rejected | none
+$link_state = 'none';  
 
 $today = date('Y-m-d');
 $total_meds = 0;
@@ -28,7 +28,6 @@ $pending_doses = 0;
 $doses_result = [];
 
 try {
-    // المريض المرتبط بالتابع (طلب مفعّل فقط، أي بعد موافقة المريض)
     $stmt = $pdo->prepare("
         SELECT u.*
         FROM patient_dependents pd
@@ -44,7 +43,6 @@ try {
         $link_state = 'active';
         $patient_id = (int) $patient['user_id'];
 
-        // عدد أدوية المريض المرتبط
         $stmt_med = $pdo->prepare("
             SELECT COUNT(*) AS total_meds
             FROM medications
@@ -53,16 +51,17 @@ try {
         $stmt_med->execute([$patient_id]);
         $total_meds = $stmt_med->fetch()['total_meds'] ?? 0;
 
-        // إحصائيات جرعات اليوم للمريض
         $stmt_doses = $pdo->prepare("
             SELECT COUNT(*) AS today_doses,
                    SUM(CASE WHEN ds.status = 'taken' THEN 1 ELSE 0 END) AS taken_doses,
                    SUM(CASE WHEN ds.status != 'taken' THEN 1 ELSE 0 END) AS pending_doses
             FROM dosage_schedules ds
             JOIN medications m ON ds.medication_id = m.medication_id
-            WHERE m.user_id = ? AND ds.start_date = ?
+            WHERE m.user_id = ?
+              AND ds.start_date <= ?
+              AND (ds.end_date IS NULL OR ds.end_date >= ?)
         ");
-        $stmt_doses->execute([$patient_id, $today]);
+        $stmt_doses->execute([$patient_id, $today, $today]);
         $doses_stats = $stmt_doses->fetch();
 
         if ($doses_stats) {
@@ -71,20 +70,20 @@ try {
             $pending_doses = $doses_stats['pending_doses'] ?? 0;
         }
 
-        // قائمة جرعات اليوم للمريض
         $stmt_list = $pdo->prepare("
             SELECT ds.schedule_id, m.medication_name,
-                   ds.dose_amount, ds.dosage_time, ds.status
+                   ds.dose_amount, ds.dose_unit, ds.dosage_time, ds.status
             FROM dosage_schedules ds
             JOIN medications m ON ds.medication_id = m.medication_id
-            WHERE m.user_id = ? AND ds.start_date = ?
+            WHERE m.user_id = ?
+              AND ds.start_date <= ?
+              AND (ds.end_date IS NULL OR ds.end_date >= ?)
             ORDER BY ds.dosage_time ASC
         ");
-        $stmt_list->execute([$patient_id, $today]);
+        $stmt_list->execute([$patient_id, $today, $today]);
         $doses_result = $stmt_list->fetchAll();
 
     } else {
-        // حالة آخر طلب ربط (بانتظار الموافقة أو مرفوض)
         $stmt = $pdo->prepare("
             SELECT status
             FROM patient_dependents
@@ -222,7 +221,6 @@ include __DIR__ . '/includes/header.php';
                 </p>
             </header>
 
-            <!--الكروت-->
             <section class="stats-grid">
                 <div class="stat-card">
                     <h2><?php echo $total_meds; ?></h2>
@@ -242,7 +240,6 @@ include __DIR__ . '/includes/header.php';
                 </div>
             </section>
 
-            <!-- كرت الجرعات اليوميه -->
             <section class="doses-section">
                 <h2 style="font-size: 20px; color: var(--text-color); margin-bottom: 20px;">جرعات المريض اليوم</h2>
                 <div class="doses-grid">
@@ -250,7 +247,7 @@ include __DIR__ . '/includes/header.php';
                         <?php foreach($doses_result as $row): ?>
                             <div class="dose-card">
                                 <h3><?php echo htmlspecialchars($row['medication_name']); ?></h3>
-                                <p class="dose-info">الجرعة: <?php echo htmlspecialchars($row['dose_amount']); ?></p>
+                                <p class="dose-info">الجرعة: <?php echo htmlspecialchars($row['dose_amount'] . ' ' . $row['dose_unit']); ?></p>
                                 <p class="dose-time">الوقت: <?php echo date("h:i A", strtotime($row['dosage_time'])); ?></p>
 
                                 <?php if ($row['status'] == 'taken'): ?>
@@ -281,6 +278,5 @@ include __DIR__ . '/includes/header.php';
         </main>
     </div>
     <?php include __DIR__ . '/includes/footer.php'; ?>
-
 </body>
 </html>
