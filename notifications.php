@@ -1,428 +1,375 @@
-<?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-if (
-    !isset($_SESSION['user_id']) ||
-    !filter_var($_SESSION['user_id'], FILTER_VALIDATE_INT) ||
-    (int) $_SESSION['user_id'] < 1
-) {
-    header('Location: login.php');
-    exit;
-}
-
-$userId = (int) $_SESSION['user_id'];
-
-require_once __DIR__ . '/db.php';
-include __DIR__ . '/includes/header.php';
-
-// حماية نموذج تحديث حالة القراءة
-if (empty($_SESSION['notification_csrf'])) {
-    $_SESSION['notification_csrf'] = bin2hex(random_bytes(32));
-}
-
-$error = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $token = $_POST['csrf_token'] ?? '';
-    $action = $_POST['action'] ?? '';
-    $notificationId = filter_input(
-        INPUT_POST,
-        'notification_id',
-        FILTER_VALIDATE_INT
-    );
-
-    if (
-        !is_string($token) ||
-        !isset($_SESSION['notification_csrf']) ||
-        !hash_equals($_SESSION['notification_csrf'], $token)
-    ) {
-        $error = 'انتهت صلاحية الطلب. حدّثي الصفحة وحاولي مرة أخرى.';
-    } elseif (
-        !is_string($action) ||
-        !in_array($action, ['mark_read', 'take_dose'], true)
-    ) {
-        $error = 'العملية المطلوبة غير صالحة.';
-    } elseif (!$notificationId || $notificationId < 1) {
-        $error = 'رقم الإشعار غير صالح.';
-    } else {
-        $check = $pdo->prepare(
-            "SELECT n.notification_id, n.schedule_id
-             FROM notifications n
-             WHERE n.notification_id = ?
-               AND n.user_id = ?
-             LIMIT 1"
-        );
-        $check->execute([$notificationId, $userId]);
-        $notification = $check->fetch(PDO::FETCH_ASSOC);
-
-        if (!$notification) {
-            $error = 'الإشعار غير موجود أو لا تملكين صلاحية تعديله.';
-        } elseif ($action === 'mark_read') {
-            $update = $pdo->prepare(
-                "UPDATE notifications
-                 SET in_site_status = 'read', read_at = NOW()
-                 WHERE notification_id = ?
-                   AND user_id = ?
-                   AND in_site_status = 'unread'"
-            );
-            $update->execute([$notificationId, $userId]);
-            header('Location: notifications.php');
-            exit;
-        } elseif ($action === 'take_dose') {
-            if (empty($notification['schedule_id'])) {
-                $error = 'هذا الإشعار غير مرتبط بجرعة.';
-            } else {
-                $update = $pdo->prepare(
-                    "UPDATE dosage_schedules SET status = 'taken'
-                     WHERE schedule_id = ? AND status = 'pending'"
-                );
-                $update->execute([$notification['schedule_id']]);
-                if ($update->rowCount() > 0) {
-                    $read = $pdo->prepare(
-                        "UPDATE notifications
-                         SET in_site_status = 'read', read_at = NOW()
-                         WHERE notification_id = ? AND user_id = ?"
-                    );
-                    $read->execute([$notificationId, $userId]);
-                    header('Location: notifications.php');
-                    exit;
-                }
-                $error = 'لم تُحدّث الجرعة. ربما تم تناولها سابقًا أو أن حالتها لم تعد pending.';
-            }
-        }
-    }
-}
-
-// جلب إشعارات المستخدم
-$stmt = $pdo->prepare(
-    "SELECT
-        n.notification_id,
-        n.notification_type,
-        n.notification_text,
-        n.notification_time,
-        n.audio_text,
-        n.email_status,
-        n.in_site_status,
-        n.email_sent_at,
-        ds.dose_amount,
-        ds.dose_unit,
-        ds.dosage_time,
-        ds.dosage_date,
-        ds.schedule_id,
-        ds.status AS dosage_status,
-        m.medication_name,
-        m.medication_shape,
-        m.medication_color,
-        m.medication_image
-     FROM notifications AS n
-     LEFT JOIN dosage_schedules AS ds ON n.schedule_id = ds.schedule_id
-     LEFT JOIN medications AS m ON ds.medication_id = m.medication_id
-     WHERE n.user_id = ?
-     ORDER BY n.notification_time DESC, n.notification_id DESC"
-);
-$stmt->execute([$userId]);
-$notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-$unreadCount = 0;
-foreach ($notifications as $n) {
-    if ($n['in_site_status'] === 'unread') $unreadCount++;
-}
-
-function h($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
-
-// دالة مساعدة: أيقونة نوع الإشعار
-function notif_icon(string $type): string {
-    if (str_contains($type, 'تذكير') || str_contains($type, 'موعد')) return '🔔';
-    if (str_contains($type, 'إضافة') || str_contains($type, 'دواء'))  return '💊';
-    return '🔔';
-}
-?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>التنبيهات | بصيرة</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <title>بصيرة | نظام التذكير الذكي للأدوية</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
-        /* ===== Layout ===== */
-        .dashboard-layout {
-            display: flex;
-            flex-direction: row;
-            align-items: flex-start;
-            min-height: calc(100vh - 130px);
+        body { font-family: 'Cairo', sans-serif; }
+        @keyframes flashAlert {
+            0%, 100% { background-color: #f8fafc; }
+            50% { background-color: #fee2e2; }
         }
-        .notif-main {
-            flex: 1;
-            padding: 40px 36px;
-            max-width: 820px;
-        }
-
-        /* ===== Page header ===== */
-        .notif-page-title {
-            text-align: center;
-            margin-bottom: 32px;
-        }
-        .notif-page-title h1 {
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--text-color, #2b3e42);
-            margin-bottom: 6px;
-        }
-        .notif-page-title p {
-            color: #8a9ea1;
-            font-size: 14px;
-        }
-
-        /* ===== Card ===== */
-        .notif-card {
-            background: #fff;
-            border: 1px solid #e3eeee;
-            border-radius: 14px;
-            padding: 20px 24px;
-            margin-bottom: 14px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            box-shadow: 0 2px 10px rgba(0,128,128,.05);
-            transition: box-shadow .2s;
-        }
-        .notif-card:hover { box-shadow: 0 4px 18px rgba(0,128,128,.10); }
-        .notif-card.unread { background: #f7fdfd; }
-
-        /* أيقونة */
-        .notif-icon-wrap {
-            flex-shrink: 0;
-            width: 46px;
-            height: 46px;
-            border-radius: 50%;
-            background: #e6f4f4;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 22px;
-        }
-        .notif-card.reminder .notif-icon-wrap { background: #fff4e0; }
-        .notif-card.taken   .notif-icon-wrap { background: #e8f8ef; }
-
-        /* نص */
-        .notif-body { flex: 1; min-width: 0; }
-        .notif-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #2b3e42;
-            margin-bottom: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .notif-sub {
-            font-size: 13px;
-            color: #718184;
-            margin-bottom: 2px;
-        }
-        .notif-time {
-            font-size: 12px;
-            color: #aab8ba;
-        }
-
-        /* شارة حالة */
-        .notif-badge {
-            font-size: 12px;
-            padding: 3px 11px;
-            border-radius: 20px;
-            font-weight: 600;
-            white-space: nowrap;
-            flex-shrink: 0;
-        }
-        .badge-unread  { background: #e0f5f0; color: #0d7a56; }
-        .badge-read    { background: #f0f3f3; color: #7a8e91; }
-        .badge-pending { background: #fff3e0; color: #b36b00; }
-        .badge-taken   { background: #e6f4ec; color: #1e6e3c; }
-
-        /* زر تناول / مقروء */
-        .notif-btn {
-            flex-shrink: 0;
-            padding: 9px 20px;
-            border-radius: 24px;
-            font-size: 14px;
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            transition: opacity .2s, transform .15s;
-            font-family: 'Tajawal', sans-serif;
-        }
-        .notif-btn:hover { opacity: .88; transform: translateY(-1px); }
-        .btn-take  { background: #008080; color: #fff; }
-        .btn-mark  { background: #f0f3f3; color: #3a5558; border: 1px solid #d0dede; }
-
-        /* فارغ / خطأ */
-        .notif-empty, .notif-error {
-            background: #fff;
-            border: 1px solid #e3eeee;
-            border-radius: 14px;
-            padding: 40px;
-            text-align: center;
-            color: #718184;
-        }
-        .notif-error { color: #a32626; }
-
-        /* شريط أعلى القسم */
-        .notif-top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .notif-count-badge {
-            background: #e0f3f1;
-            color: #008080;
-            padding: 5px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        @media (max-width: 700px) {
-            .notif-main { padding: 24px 14px; }
-            .notif-card { flex-wrap: wrap; gap: 12px; }
-            .notif-title { white-space: normal; }
-        }
+        .visual-alarm { animation: flashAlert 0.6s ease-in-out 4; }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between transition-colors">
 
-<div class="dashboard-layout">
-    <?php include __DIR__ . '/includes/sidebar.php'; ?>
-
-    <div class="notif-main">
-
-        <!-- عنوان الصفحة -->
-        <div class="notif-page-title">
-            <h1>التنبيهات</h1>
-            <p>تنبيهات مواعيد الأدوية والجرعات</p>
-        </div>
-
-        <?php if ($error !== ''): ?>
-            <div class="notif-error"><?= h($error) ?></div>
-        <?php endif; ?>
-
-        <!-- شريط العدد -->
-        <div class="notif-top-bar">
-            <span class="notif-count-badge">
-                <?= $unreadCount ?> غير مقروء
-            </span>
-        </div>
-
-        <?php if (empty($notifications)): ?>
-            <div class="notif-empty">
-                <div style="font-size:40px;margin-bottom:12px">🔔</div>
-                <h2 style="margin-bottom:6px;color:#2b3e42">لا توجد تنبيهات حاليًا</h2>
-                <p>ستظهر تنبيهاتك هنا عند توفرها.</p>
+    <!-- الشريط العلوي -->
+    <header class="bg-white shadow-sm border-b border-slate-100 sticky top-0 z-40">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-teal-600 flex items-center justify-center text-white shadow-md">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-teal-900">بصيرة</h1>
+                    <p class="text-xs text-slate-500">لوحة المريض والتنبيهات</p>
+                </div>
             </div>
-        <?php else: ?>
+            <div class="flex items-center gap-2">
+                <button onclick="openModal()" class="px-3 py-2 text-xs font-bold bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition shadow-sm">
+                    + إضافة دواء
+                </button>
+                <button onclick="triggerAlarm('باراسيتامول', 'حبوب دائرية', 'أبيض', '#ffffff', '500 ملغ')" class="relative p-2.5 rounded-full bg-teal-50 text-teal-700 hover:bg-teal-100 transition" title="تجربة التنبيه الصوتي والمرئي">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                    <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-ping"></span>
+                </button>
+            </div>
+        </div>
+    </header>
 
-            <?php foreach ($notifications as $item):
-                $isUnread   = $item['in_site_status'] === 'unread';
-                $isPending  = !empty($item['schedule_id']) && ($item['dosage_status'] ?? '') === 'pending';
-                $isTaken    = !empty($item['schedule_id']) && ($item['dosage_status'] ?? '') === 'taken';
-                $isReminder = str_contains((string)$item['notification_type'], 'تذكير');
+    <!-- المحتوى الرئيسي -->
+    <main class="max-w-4xl mx-auto px-4 py-6 w-full flex-grow space-y-6">
 
-                // اسم الدواء + الجرعة للعنوان
-                $medName  = $item['medication_name'] ?? '';
-                $doseAmt  = $item['dose_amount']  ?? '';
-                $doseUnit = $item['dose_unit']     ?? '';
-                $doseTime = !empty($item['dosage_time']) ? substr($item['dosage_time'], 0, 5) : '';
+        <!-- لوحة الساعة والحالة -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col items-center text-center">
+            <span class="text-xs font-semibold px-3 py-1 bg-teal-50 text-teal-700 rounded-full mb-2">الوقت الحالي (مراقبة الجرعات نشطة)</span>
+            <div id="live-clock" class="text-3xl font-black text-slate-800 tracking-wider mb-3" dir="ltr">00:00:00</div>
+            <div class="flex flex-wrap justify-center gap-2">
+                <span class="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    النظام متصل ومستعد للتنبيه
+                </span>
+                <button onclick="triggerAlarm('باراسيتامول', 'حبوب دائرية', 'أبيض', '#ffffff', '500 ملغ')" class="text-xs font-bold bg-amber-100 text-amber-800 px-3 py-1.5 rounded-lg hover:bg-amber-200 transition">
+                    🔔 تجربة تنبيه صوتي ومرئي الآن
+                </button>
+            </div>
+        </div>
 
-                // بناء النص الرئيسي للبطاقة
-                if ($medName && $doseTime) {
-                    $cardTitle = "موعد {$medName} الساعة {$doseTime}";
-                } elseif ($medName) {
-                    $cardTitle = $item['notification_type'] . " — {$medName}";
-                } else {
-                    $cardTitle = $item['notification_type'] ?: $item['notification_text'];
-                }
+        <!-- قسم التنبيهات -->
+        <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-slate-100 pb-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">تنبيهاتي</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">تابعي تنبيهات أدويتك ومواعيد الجرعات مع تفاصيل الشكل واللون لسهولة التمييز</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="badge-count" class="text-xs font-bold px-3 py-1 bg-teal-50 text-teal-700 rounded-full border border-teal-200">2 تنبيه نشط</span>
+                    <button onclick="markAllRead()" class="text-xs text-slate-500 font-semibold hover:text-teal-700 underline">تحديد الكل كمقروء</button>
+                </div>
+            </div>
 
-                // نص فرعي: الجرعة أو النص الأصلي
-                $cardSub = '';
-                if ($doseAmt) {
-                    $cardSub = "الجرعة: {$doseAmt} {$doseUnit}";
-                } elseif (mb_strlen($item['notification_text']) < 120) {
-                    $cardSub = $item['notification_text'];
-                }
+            <!-- قائمة الأدوية والتنبيهات -->
+            <div id="notifications-list" class="space-y-4">
 
-                // وقت التنبيه منسّق
-                $timeLabel = '';
-                if (!empty($item['notification_time'])) {
-                    $ts = strtotime($item['notification_time']);
-                    if ($ts) $timeLabel = date('Y/m/d — h:i A', $ts);
-                }
-
-                // فئة البطاقة
-                $cardClass = $isUnread ? 'unread' : '';
-                if ($isReminder) $cardClass .= ' reminder';
-                if ($isTaken)    $cardClass .= ' taken';
-            ?>
-
-            <div class="notif-card <?= $cardClass ?>">
-
-                <!-- أيقونة -->
-                <div class="notif-icon-wrap">
-                    <?= notif_icon((string)$item['notification_type']) ?>
+                <!-- بطاقة دواء 1 -->
+                <div id="alert-1" class="p-4 rounded-xl border border-amber-200 bg-amber-50/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition">
+                    <div class="flex items-start gap-3.5 w-full">
+                        <!-- تمثيل بصري لشكل ولون الدواء -->
+                        <div class="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 flex flex-col items-center justify-center flex-shrink-0 shadow-inner">
+                            <span class="w-7 h-7 rounded-full bg-white border-2 border-slate-300 shadow-sm block"></span>
+                            <span class="text-[10px] text-slate-500 mt-1 font-bold">أبيض</span>
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold px-2.5 py-0.5 bg-amber-100 text-amber-800 rounded-md">تذكير بالجرعة</span>
+                                <span class="text-xs text-slate-400 font-semibold" dir="ltr">08:00 PM</span>
+                            </div>
+                            <h3 class="font-bold text-slate-800 mt-1.5 text-base">حان موعد دواء باراسيتامول</h3>
+                            <div class="text-xs text-slate-600 mt-2 bg-white p-3 rounded-xl border border-slate-100 grid grid-cols-2 gap-2">
+                                <p><span class="text-slate-400">اسم الدواء:</span> <strong class="text-slate-800">باراسيتامول</strong></p>
+                                <p><span class="text-slate-400">الجرعة:</span> <strong class="text-teal-700">500 ملغ</strong></p>
+                                <p><span class="text-slate-400">شكل الدواء:</span> <strong class="text-slate-800">حبوب دائرية</strong></p>
+                                <p class="flex items-center gap-1.5"><span class="text-slate-400">لون الدواء:</span> <strong class="text-slate-800">أبيض</strong> <span class="w-3 h-3 rounded-full bg-white border border-slate-400 inline-block"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 w-full md:w-auto justify-end pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+                        <button onclick="triggerAlarm('باراسيتامول', 'حبوب دائرية', 'أبيض', '#ffffff', '500 ملغ')" class="p-2 text-teal-700 bg-teal-50 rounded-lg hover:bg-teal-100" title="سماع التنبيه">🔊</button>
+                        <button onclick="dismissAlert('alert-1')" class="px-3 py-2 text-xs font-semibold bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">تحديد كمقروء</button>
+                        <button onclick="confirmDose('alert-1', 'باراسيتامول')" class="px-4 py-2 text-xs font-bold bg-teal-600 text-white rounded-lg hover:bg-teal-700 shadow-sm">تناولت الجرعة</button>
+                    </div>
                 </div>
 
-                <!-- نص -->
-                <div class="notif-body">
-                    <div class="notif-title"><?= h($cardTitle) ?></div>
-                    <?php if ($cardSub): ?>
-                        <div class="notif-sub"><?= h($cardSub) ?></div>
-                    <?php endif; ?>
-                    <?php if ($timeLabel): ?>
-                        <div class="notif-time"><?= h($timeLabel) ?></div>
-                    <?php endif; ?>
+                <!-- بطاقة دواء 2 -->
+                <div id="alert-2" class="p-4 rounded-xl border border-teal-100 bg-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition">
+                    <div class="flex items-start gap-3.5 w-full">
+                        <!-- تمثيل بصري لشكل ولون الدواء -->
+                        <div class="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex flex-col items-center justify-center flex-shrink-0 shadow-inner">
+                            <span class="w-5 h-8 rounded-t-md rounded-b-lg bg-amber-400 border border-amber-500 shadow-sm block"></span>
+                            <span class="text-[10px] text-amber-800 mt-1 font-bold">أصفر</span>
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold px-2.5 py-0.5 bg-teal-50 text-teal-700 rounded-md">موعد قادم</span>
+                                <span class="text-xs text-slate-400 font-semibold" dir="ltr">09:45 PM</span>
+                            </div>
+                            <h3 class="font-bold text-slate-800 mt-1.5 text-base">مضاد حيوي للأطفال (شراب)</h3>
+                            <div class="text-xs text-slate-600 mt-2 bg-slate-50 p-3 rounded-xl border border-slate-100 grid grid-cols-2 gap-2">
+                                <p><span class="text-slate-400">اسم الدواء:</span> <strong class="text-slate-800">أموكسيسيلين</strong></p>
+                                <p><span class="text-slate-400">الجرعة:</span> <strong class="text-teal-700">5 مل</strong></p>
+                                <p><span class="text-slate-400">شكل الدواء:</span> <strong class="text-slate-800">شراب سائل</strong></p>
+                                <p class="flex items-center gap-1.5"><span class="text-slate-400">لون الدواء:</span> <strong class="text-slate-800">أصفر</strong> <span class="w-3 h-3 rounded-full bg-amber-400 inline-block"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 w-full md:w-auto justify-end pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+                        <button onclick="triggerAlarm('شراب مضاد حيوي', 'شراب سائل', 'أصفر', '#fbbf24', '5 مل')" class="p-2 text-teal-700 bg-teal-50 rounded-lg hover:bg-teal-100" title="سماع التنبيه">🔊</button>
+                        <button onclick="dismissAlert('alert-2')" class="px-3 py-2 text-xs font-semibold bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50">تحديد كمقروء</button>
+                        <button onclick="confirmDose('alert-2', 'مضاد حيوي')" class="px-4 py-2 text-xs font-bold bg-teal-600 text-white rounded-lg hover:bg-teal-700 shadow-sm">تناولت الجرعة</button>
+                    </div>
                 </div>
 
-                <!-- شارة الحالة -->
-                <?php if ($isTaken): ?>
-                    <span class="notif-badge badge-taken">تم تناولها ✓</span>
-                <?php elseif ($isPending): ?>
-                    <span class="notif-badge badge-pending">قريباً</span>
-                <?php elseif ($isUnread): ?>
-                    <span class="notif-badge badge-unread">جديد</span>
-                <?php else: ?>
-                    <span class="notif-badge badge-read">مقروء</span>
-                <?php endif; ?>
+            </div>
+        </div>
+    </main>
 
-                <!-- أزرار الإجراء -->
-                <?php if ($isPending): ?>
-                    <form method="post" action="notifications.php">
-                        <input type="hidden" name="action" value="take_dose">
-                        <input type="hidden" name="csrf_token" value="<?= h($_SESSION['notification_csrf']) ?>">
-                        <input type="hidden" name="notification_id" value="<?= (int)$item['notification_id'] ?>">
-                        <button type="submit" class="notif-btn btn-take">تم تناولها</button>
-                    </form>
-                <?php elseif ($isUnread && !$isPending): ?>
-                    <form method="post" action="notifications.php">
-                        <input type="hidden" name="action" value="mark_read">
-                        <input type="hidden" name="csrf_token" value="<?= h($_SESSION['notification_csrf']) ?>">
-                        <input type="hidden" name="notification_id" value="<?= (int)$item['notification_id'] ?>">
-                        <button type="submit" class="notif-btn btn-mark">تحديد كمقروء</button>
-                    </form>
-                <?php endif; ?>
+    <!-- نافذة التنبيه المرئي المنبثقة عند موعد الجرعة -->
+    <div id="visual-alarm-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border-4 border-red-500 animate-bounce">
+            <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl">
+                ⏰
+            </div>
+            <span class="text-xs font-bold bg-red-100 text-red-700 px-3 py-1 rounded-full">تنبيه موعد الدواء الآن</span>
+            <h3 id="alarm-med-name" class="text-2xl font-black text-slate-800 mt-3">باراسيتامول</h3>
+            <p id="alarm-med-dose" class="text-sm font-bold text-teal-700 mt-1">الجرعة: 500 ملغ</p>
+            
+            <div class="my-4 p-4 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col items-center">
+                <p class="text-xs text-slate-500 mb-2">مواصفات تمييز الدواء:</p>
+                <div id="alarm-color-circle" class="w-12 h-12 rounded-full border-2 border-slate-300 shadow-md mb-2"></div>
+                <p id="alarm-med-desc" class="text-sm font-bold text-slate-800">الشكل: حبوب | اللون: أبيض</p>
+            </div>
 
-            </div><!-- /notif-card -->
+            <button onclick="closeAlarmModal()" class="w-full py-3 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 transition shadow-lg">
+                تم الاستلام وإيقاف التنبيه
+            </button>
+        </div>
+    </div>
 
-            <?php endforeach; ?>
+    <!-- نافذة إضافة دواء جديد -->
+    <div id="add-med-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="font-bold text-lg text-slate-800">إضافة دواء وموعد تنبيه</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-700 font-bold text-xl">&times;</button>
+            </div>
+            <form onsubmit="addMedication(event)" class="space-y-3 text-sm">
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">اسم الدواء</label>
+                    <input type="text" id="med-name" required placeholder="مثال: فيتامين د" class="w-full border border-slate-200 rounded-xl px-3 py-2 focus:outline-teal-600">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">شكل الدواء</label>
+                        <select id="med-shape" class="w-full border border-slate-200 rounded-xl px-3 py-2">
+                            <option value="حبوب دائرية">حبوب دائرية</option>
+                            <option value="كبسولات">كبسولات</option>
+                            <option value="شراب سائل">شراب سائل</option>
+                            <option value="قطرة">قطرة</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">لون الدواء</label>
+                        <select id="med-color" class="w-full border border-slate-200 rounded-xl px-3 py-2">
+                            <option value="أبيض|#ffffff">أبيض</option>
+                            <option value="أحمر|#ef4444">أحمر</option>
+                            <option value="أصفر|#fbbf24">أصفر</option>
+                            <option value="أزرق|#3b82f6">أزرق</option>
+                            <option value="أخضر|#10b981">أخضر</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">الجرعة</label>
+                        <input type="text" id="med-dose" required placeholder="مثال: حبة واحدة" class="w-full border border-slate-200 rounded-xl px-3 py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">وقت الجرعة</label>
+                        <input type="time" id="med-time" required class="w-full border border-slate-200 rounded-xl px-3 py-2">
+                    </div>
+                </div>
+                <button type="submit" class="w-full py-2.5 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 mt-2">حفظ وتفعيل التنبيه</button>
+            </form>
+        </div>
+    </div>
 
-        <?php endif; ?>
+    <!-- تذييل الصفحة -->
+    <footer class="bg-white border-t border-slate-100 py-4 text-center text-xs text-slate-400 mt-8">
+        جميع الحقوق محفوظة © 2026 - نظام بصيرة للتذكير بالأدوية
+    </footer>
 
-    </div><!-- /notif-main -->
-</div><!-- /dashboard-layout -->
+    <script>
+        let scheduledMeds = [];
 
-<?php include __DIR__ . '/includes/footer.php'; ?>
+        // تحديث الساعة الحية وفحص المواعيد كل ثانية
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-GB');
+            document.getElementById('live-clock').innerText = timeStr;
+
+            const currentHM = timeStr.slice(0, 5);
+            if (now.getSeconds() === 0) {
+                scheduledMeds.forEach(med => {
+                    if (med.time === currentHM) {
+                        triggerAlarm(med.name, med.shape, med.colorName, med.colorHex, med.dose);
+                    }
+                });
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // تحديث عداد التنبيهات
+        function updateBadge() {
+            const count = document.querySelectorAll('#notifications-list > div').length;
+            document.getElementById('badge-count').innerText = count + ' تنبيه نشط';
+        }
+
+        // إزالة تنبيه
+        function dismissAlert(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.remove();
+                updateBadge();
+            }
+        }
+
+        // تأكيد تناول الجرعة
+        function confirmDose(id, medName) {
+            speakArabic('أحسنت، تم تسجيل تناول جرعة ' + medName);
+            dismissAlert(id);
+        }
+
+        // تحديد الكل مقروء
+        function markAllRead() {
+            document.getElementById('notifications-list').innerHTML = '<p class="text-center text-xs text-slate-400 py-6">لا توجد تنبيهات غير مقروءة حالياً</p>';
+            updateBadge();
+        }
+
+        // نغمة تنبيه صوتية (Beep) + نطق عربي
+        function playBeep() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.8);
+                osc.stop(ctx.currentTime + 0.8);
+            } catch (e) {}
+        }
+
+        function speakArabic(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'ar-SA';
+                msg.rate = 0.95;
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
+        // تشغيل التنبيه الصوتي والمرئي الكامل
+        function triggerAlarm(name, shape, colorName, colorHex, dose) {
+            playBeep();
+            document.body.classList.add('visual-alarm');
+            setTimeout(() => document.body.classList.remove('visual-alarm'), 2500);
+
+            document.getElementById('alarm-med-name').innerText = name;
+            document.getElementById('alarm-med-dose').innerText = 'الجرعة: ' + dose;
+            document.getElementById('alarm-med-desc').innerText = 'الشكل: ' + shape + ' | اللون: ' + colorName;
+            document.getElementById('alarm-color-circle').style.backgroundColor = colorHex;
+
+            const modal = document.getElementById('visual-alarm-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+
+            speakArabic(`تنبيه موعد الدواء. حان الآن موعد ${name}، الجرعة ${dose}، شكل الدواء ${shape}، ولونه ${colorName}`);
+        }
+
+        function closeAlarmModal() {
+            window.speechSynthesis.cancel();
+            const modal = document.getElementById('visual-alarm-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // نافذة إضافة دواء
+        function openModal() {
+            document.getElementById('add-med-modal').classList.remove('hidden');
+            document.getElementById('add-med-modal').classList.add('flex');
+        }
+
+        function closeModal() {
+            document.getElementById('add-med-modal').classList.add('hidden');
+            document.getElementById('add-med-modal').classList.remove('flex');
+        }
+
+        function addMedication(e) {
+            e.preventDefault();
+            const name = document.getElementById('med-name').value;
+            const shape = document.getElementById('med-shape').value;
+            const [colorName, colorHex] = document.getElementById('med-color').value.split('|');
+            const dose = document.getElementById('med-dose').value;
+            const time = document.getElementById('med-time').value;
+            const id = 'alert-' + Date.now();
+
+            scheduledMeds.push({ name, shape, colorName, colorHex, dose, time });
+
+            const list = document.getElementById('notifications-list');
+            if (list.querySelector('p.text-center')) list.innerHTML = '';
+
+            const card = `
+                <div id="${id}" class="p-4 rounded-xl border border-teal-200 bg-teal-50/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition">
+                    <div class="flex items-start gap-3.5 w-full">
+                        <div class="w-14 h-14 rounded-2xl bg-slate-100 border border-slate-200 flex flex-col items-center justify-center flex-shrink-0 shadow-inner">
+                            <span class="w-7 h-7 rounded-full border border-slate-300 shadow-sm block" style="background-color: ${colorHex}"></span>
+                            <span class="text-[10px] text-slate-600 mt-1 font-bold">${colorName}</span>
+                        </div>
+                        <div class="flex-grow">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold px-2.5 py-0.5 bg-teal-100 text-teal-800 rounded-md">موعد مجدول</span>
+                                <span class="text-xs text-slate-500 font-bold" dir="ltr">${time}</span>
+                            </div>
+                            <h3 class="font-bold text-slate-800 mt-1.5 text-base">${name}</h3>
+                            <div class="text-xs text-slate-600 mt-2 bg-white p-3 rounded-xl border border-slate-100 grid grid-cols-2 gap-2">
+                                <p><span class="text-slate-400">اسم الدواء:</span> <strong class="text-slate-800">${name}</strong></p>
+                                <p><span class="text-slate-400">الجرعة:</span> <strong class="text-teal-700">${dose}</strong></p>
+                                <p><span class="text-slate-400">شكل الدواء:</span> <strong class="text-slate-800">${shape}</strong></p>
+                                <p class="flex items-center gap-1.5"><span class="text-slate-400">لون الدواء:</span> <strong class="text-slate-800">${colorName}</strong> <span class="w-3 h-3 rounded-full border border-slate-400 inline-block" style="background-color: ${colorHex}"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 w-full md:w-auto justify-end pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+                        <button onclick="triggerAlarm('${name}', '${shape}', '${colorName}', '${colorHex}', '${dose}')" class="p-2 text-teal-700 bg-teal-50 rounded-lg hover:bg-teal-100">🔊</button>
+                        <button onclick="dismissAlert('${id}')" class="px-3 py-2 text-xs font-semibold bg-white border border-slate-200 text-slate-600 rounded-lg">تحديد كمقروء</button>
+                        <button onclick="confirmDose('${id}', '${name}')" class="px-4 py-2 text-xs font-bold bg-teal-600 text-white rounded-lg hover:bg-teal-700">تناولت الجرعة</button>
+                    </div>
+                </div>
+            `;
+            list.insertAdjacentHTML('afterbegin', card);
+            updateBadge();
+            closeModal();
+            e.target.reset();
+            speakArabic('تمت إضافة دواء ' + name + ' بنجاح');
+        }
+    </script>
 </body>
 </html>
